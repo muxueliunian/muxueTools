@@ -12,7 +12,7 @@
 | 1 | [API Keys 页面优化](#任务-1-api-keys-页面优化) | KeyManagerView | P0 | ✅ 已完成 |
 | 2 | [Chat 界面改进](#任务-2-chat-界面改进) | ChatView | P0 | ✅ 已完成 |
 | 3 | [Statistics 页面实现](#任务-3-statistics-页面实现) | StatsView | P1 | ✅ 已完成 |
-| 4 | [Settings 页面完善](#任务-4-settings-页面完善) | SettingsView | P1 | ⏳ 待开发 |
+| 4 | [Settings 页面完善](#任务-4-settings-页面完善) | SettingsView | P1 | ✅ 已完成 |
 | 5 | [Model Settings 页面](#任务-5-model-settings-页面新增) | ModelSettingsView | P2 | ⏳ 待开发 |
 | 6 | [国际化 (i18n)](#任务-6-国际化-i18n) | 全局 | P1 | ⏳ 待开发 |
 | 7 | [README 使用文档](#任务-7-readme-使用文档) | - | P0 | ⏳ 待开发 |
@@ -76,10 +76,10 @@
 **文件**: `web/src/views/SettingsView.vue`
 
 ### 问题清单
-- [ ] Security 标签页面内容设计
-- [ ] Advanced 标签页面内容设计
-- [ ] UI 细节调整（间距、对齐等）
-- [ ] 配置保存功能验证
+- [x] Security 标签页面内容设计
+- [x] Advanced 标签页面内容设计
+- [x] UI 细节调整（间距、对齐等）
+- [x] 配置保存功能验证
 
 ### 参考截图
 ![Settings 当前状态](../../image/settings_current.png)
@@ -159,7 +159,9 @@
 | 2026-01-18 | 完成任务 1: API Keys 页面优化 |
 | 2026-01-18 | 完成任务 2: Chat 界面改进 |
 | 2026-01-18 | 完成任务 3: Statistics 页面实现 |
+| 2026-01-19 | 完成任务 4: Settings 页面完善 |
 
 ---
 
-*最后更新: 2026-01-18*
+*最后更新: 2026-01-19*
+

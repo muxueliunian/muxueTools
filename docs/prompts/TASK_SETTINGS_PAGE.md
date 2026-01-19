@@ -76,7 +76,7 @@ Settings 页面已有基础骨架（`web/src/views/SettingsView.vue`），包含
 | Log Level | SQLite 持久化 + 热更新 | ✅ 已完成 |
 | Automatic Updates 开关 | SQLite 持久化 | ✅ 已完成 |
 | 更新源选择 | 新增 UI + SQLite 持久化 | ✅ 已完成 |
-| Check Now 按钮 | 双轨更新检查 | ⏳ 待实现（需服务器配置）|
+| Check Now 按钮 | 双轨更新检查 | ✅ 已完成 |
 
 #### 1.3 更新服务设计
 
@@ -99,10 +99,11 @@ Settings 页面已有基础骨架（`web/src/views/SettingsView.vue`），包含
 
 **服务器部署步骤：**
 1. [x] 创建 GitHub 仓库 `muxueliunian/muxueTools`
-2. [ ] 在宝塔创建目录：`/www/wwwroot/mxlnuma.space/muxueTools/update/`
-3. [ ] 上传 `configs/update/latest.json` 到服务器
-4. [ ] 配置 Nginx location 规则
-5. [ ] 测试访问 `https://mxlnuma.space/muxueTools/update/latest.json`
+2. [x] 在宝塔创建目录：`/www/wwwroot/mxlnuma.space/muxueTools/update/`
+3. [x] 通过 GitHub Actions 自动上传 `latest.json`
+4. [x] 配置 Nginx location 规则 + CORS
+5. [x] 测试访问 `https://mxlnuma.space/muxueTools/update/latest.json` ✅
+6. [x] GitHub Actions CI/CD 自动化部署 (`.github/workflows/release.yml`)
 
 ---
 
@@ -290,6 +291,10 @@ Settings 页面已有基础骨架（`web/src/views/SettingsView.vue`），包含
 | 2026-01-19 | **BUG修复**: 配置保存格式 | handleSave 发送格式与后端不匹配，已修复 |
 | 2026-01-19 | **BUG修复**: GetConfig 读取问题 | GetConfig 返回 config.yaml 值而非 SQLite 存储值，已修复 |
 | 2026-01-19 | **BUG修复**: 暗色模式 Select 背景 | 下拉框背景不随主题切换，通过添加 dark 类到组件根元素修复 |
+| 2026-01-19 | **IP 白名单中间件应用** | 应用到 `/v1/*` 路由，保护 OpenAI 兼容端点 |
+| 2026-01-19 | **GitHub Actions CI/CD** | 配置自动构建和 FTP 上传，推送 tag 自动发布 |
+| 2026-01-19 | **双源更新检查 API** | 实现 mxln 服务器和 GitHub Releases 双源检查 |
+| 2026-01-19 | **API 文档更新** | 添加配置 API 和数据管理 API 文档 |
 
 ---
 

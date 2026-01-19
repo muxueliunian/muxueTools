@@ -983,6 +983,12 @@ func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 
 // ==================== Update Check ====================
 
+// Update source URLs
+const (
+	MxlnUpdateURL   = "https://mxlnuma.space/muxueTools/update/latest.json"
+	GitHubUpdateURL = "https://api.github.com/repos/muxueliunian/muxueTools/releases/latest"
+)
+
 // UpdateCheckResponse represents the update check result.
 type UpdateCheckResponse struct {
 	Success bool            `json:"success"`
@@ -996,24 +1002,211 @@ type UpdateCheckData struct {
 	HasUpdate      bool   `json:"has_update"`
 	DownloadURL    string `json:"download_url,omitempty"`
 	Changelog      string `json:"changelog,omitempty"`
-	PublishedAt    string `json:"published_at,omitempty"`
+	ReleaseDate    string `json:"release_date,omitempty"`
+	Source         string `json:"source,omitempty"`
+}
+
+// MxlnUpdateInfo represents the structure of latest.json from mxln server.
+type MxlnUpdateInfo struct {
+	Version             string            `json:"version"`
+	ReleaseDate         string            `json:"release_date"`
+	Changelog           string            `json:"changelog"`
+	Downloads           map[string]string `json:"downloads"`
+	MinSupportedVersion string            `json:"min_supported_version"`
+	IsCritical          bool              `json:"is_critical"`
+	Announcement        string            `json:"announcement"`
+}
+
+// GitHubReleaseInfo represents the GitHub API release response.
+type GitHubReleaseInfo struct {
+	TagName     string `json:"tag_name"`
+	Name        string `json:"name"`
+	Body        string `json:"body"`
+	PublishedAt string `json:"published_at"`
+	HTMLURL     string `json:"html_url"`
+	Assets      []struct {
+		Name               string `json:"name"`
+		BrowserDownloadURL string `json:"browser_download_url"`
+	} `json:"assets"`
 }
 
 // CheckUpdate handles GET /api/update/check - Check for updates.
 func (h *AdminHandler) CheckUpdate(c *gin.Context) {
-	// Note: In a full implementation, this would call the GitHub API
-	// For now, return a mock response
+	// Get current version (set at build time or default to "dev")
+	currentVersion := config.GetVersion()
+	if currentVersion == "" {
+		currentVersion = "dev"
+	}
 
-	data := UpdateCheckData{
-		CurrentVersion: "dev",
-		LatestVersion:  "dev",
-		HasUpdate:      false,
+	// Get update source from storage
+	source := "mxln" // default
+	if h.storage != nil {
+		if storedSource, _ := h.storage.GetConfig("update.source"); storedSource != "" {
+			source = storedSource
+		}
+	}
+
+	var data UpdateCheckData
+	var err error
+
+	if source == "github" {
+		data, err = h.fetchGitHubUpdate(currentVersion)
+	} else {
+		data, err = h.fetchMxlnUpdate(currentVersion)
+	}
+
+	if err != nil {
+		h.logger.WithError(err).WithField("source", source).Warn("Failed to check for updates")
+		// Return current version info without update
+		data = UpdateCheckData{
+			CurrentVersion: currentVersion,
+			LatestVersion:  currentVersion,
+			HasUpdate:      false,
+			Source:         source,
+		}
 	}
 
 	c.JSON(http.StatusOK, UpdateCheckResponse{
 		Success: true,
 		Data:    data,
 	})
+}
+
+// fetchMxlnUpdate fetches update info from mxln server.
+func (h *AdminHandler) fetchMxlnUpdate(currentVersion string) (UpdateCheckData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", MxlnUpdateURL, nil)
+	if err != nil {
+		return UpdateCheckData{}, err
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return UpdateCheckData{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return UpdateCheckData{}, fmt.Errorf("unexpected status: %d", resp.StatusCode)
+	}
+
+	var info MxlnUpdateInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return UpdateCheckData{}, err
+	}
+
+	// Get download URL for windows-amd64
+	downloadURL := ""
+	if url, ok := info.Downloads["windows-amd64"]; ok {
+		downloadURL = url
+	}
+
+	return UpdateCheckData{
+		CurrentVersion: currentVersion,
+		LatestVersion:  info.Version,
+		HasUpdate:      compareVersions(info.Version, currentVersion) > 0,
+		DownloadURL:    downloadURL,
+		Changelog:      info.Changelog,
+		ReleaseDate:    info.ReleaseDate,
+		Source:         "mxln",
+	}, nil
+}
+
+// fetchGitHubUpdate fetches update info from GitHub Releases.
+func (h *AdminHandler) fetchGitHubUpdate(currentVersion string) (UpdateCheckData, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", GitHubUpdateURL, nil)
+	if err != nil {
+		return UpdateCheckData{}, err
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	req.Header.Set("User-Agent", "MxlnAPI-Updater")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return UpdateCheckData{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return UpdateCheckData{}, fmt.Errorf("unexpected status: %d", resp.StatusCode)
+	}
+
+	var info GitHubReleaseInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return UpdateCheckData{}, err
+	}
+
+	// Extract version from tag (remove 'v' prefix if present)
+	latestVersion := strings.TrimPrefix(info.TagName, "v")
+
+	// Find windows-amd64 asset
+	downloadURL := info.HTMLURL
+	for _, asset := range info.Assets {
+		if strings.Contains(asset.Name, "windows-amd64") {
+			downloadURL = asset.BrowserDownloadURL
+			break
+		}
+	}
+
+	return UpdateCheckData{
+		CurrentVersion: currentVersion,
+		LatestVersion:  latestVersion,
+		HasUpdate:      compareVersions(latestVersion, currentVersion) > 0,
+		DownloadURL:    downloadURL,
+		Changelog:      info.Body,
+		ReleaseDate:    info.PublishedAt,
+		Source:         "github",
+	}, nil
+}
+
+// compareVersions compares two semantic versions.
+// Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal.
+func compareVersions(v1, v2 string) int {
+	// Handle "dev" version
+	if v1 == "dev" || v2 == "dev" {
+		if v1 == v2 {
+			return 0
+		}
+		if v1 == "dev" {
+			return -1 // dev is always "older"
+		}
+		return 1
+	}
+
+	// Parse version strings
+	parts1 := strings.Split(v1, ".")
+	parts2 := strings.Split(v2, ".")
+
+	maxLen := len(parts1)
+	if len(parts2) > maxLen {
+		maxLen = len(parts2)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		var n1, n2 int
+		if i < len(parts1) {
+			n1, _ = strconv.Atoi(parts1[i])
+		}
+		if i < len(parts2) {
+			n2, _ = strconv.Atoi(parts2[i])
+		}
+
+		if n1 > n2 {
+			return 1
+		}
+		if n1 < n2 {
+			return -1
+		}
+	}
+
+	return 0
 }
 
 // RegenerateProxyKey handles POST /api/config/regenerate-proxy-key - Generate a new proxy key.

@@ -18,7 +18,20 @@ var (
 	globalConfig *types.Config
 	configMu     sync.RWMutex
 	once         sync.Once
+	appVersion   = "dev" // Set at build time via -ldflags
 )
+
+// SetVersion sets the application version (called at startup).
+func SetVersion(version string) {
+	if version != "" {
+		appVersion = version
+	}
+}
+
+// GetVersion returns the current application version.
+func GetVersion() string {
+	return appVersion
+}
 
 // Loader handles configuration loading and management.
 type Loader struct {
