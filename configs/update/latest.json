@@ -1,0 +1,13 @@
+{
+    "version": "0.1.0",
+    "release_date": "2026-01-19T00:00:00Z",
+    "changelog": "## v0.1.0 - 初始版本\n\n- 🎉 首次发布\n- ✨ OpenAI API 兼容代理\n- 🔑 多 Key 轮询管理\n- 💬 内置聊天界面\n- 📊 统计数据看板",
+    "downloads": {
+        "windows-amd64": "https://mxlnuma.space/muxueTools/releases/v0.1.0/muxueTools-windows-amd64.zip",
+        "windows-386": "https://mxlnuma.space/muxueTools/releases/v0.1.0/muxueTools-windows-386.zip",
+        "android-apk": "https://mxlnuma.space/muxueTools/releases/v0.1.0/muxueTools.apk"
+    },
+    "min_supported_version": "0.1.0",
+    "is_critical": false,
+    "announcement": ""
+}

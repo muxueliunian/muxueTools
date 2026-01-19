@@ -1,0 +1,49 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.log
+*.tmp
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+*.env
+
+# Data files (SENSITIVE - contains API keys!)
+data/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Test coverage
+coverage/
+*.cover
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# Config with secrets
+config.yaml
+configs/local/

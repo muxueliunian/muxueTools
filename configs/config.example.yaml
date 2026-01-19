@@ -1,0 +1,98 @@
+# MxlnAPI 配置文件示例
+# 复制此文件为 config.yaml 并根据需要修改
+
+# ========================
+# 服务器配置
+# ========================
+server:
+  port: 8080                              # 监听端口
+  host: "0.0.0.0"                         # 绑定地址（0.0.0.0 表示所有接口）
+
+# ========================
+# API Key 配置
+# ========================
+keys:
+  - key: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    name: "主要 Key"
+    enabled: true
+    tags:
+      - "primary"
+      - "personal"
+  
+  - key: "AIzaSyYYYYYYYYYYYYYYYYYYYYYYYYYY"
+    name: "备用 Key"
+    enabled: true
+    tags:
+      - "backup"
+
+# ========================
+# Key 池策略配置
+# ========================
+pool:
+  # 选择策略：round_robin | random | least_used | weighted
+  strategy: "round_robin"
+  
+  # 触发 Rate Limit 后的冷却时间（秒）
+  cooldown_seconds: 60
+  
+  # 单次请求最大重试次数（换 Key 重试）
+  max_retries: 3
+
+# ========================
+# 模型映射
+# ========================
+model_mappings:
+  # OpenAI 模型名 → Gemini 模型名
+  "gpt-4": "gemini-1.5-pro-latest"
+  "gpt-4-turbo": "gemini-1.5-pro-latest"
+  "gpt-4-vision-preview": "gemini-1.5-pro-latest"
+  "gpt-4o": "gemini-1.5-flash-latest"
+  "gpt-4o-mini": "gemini-1.5-flash-8b-latest"
+  "gpt-3.5-turbo": "gemini-1.5-flash-latest"
+  
+  # Gemini 原生模型名（透传）
+  "gemini-pro": "gemini-1.5-pro-latest"
+  "gemini-flash": "gemini-1.5-flash-latest"
+  "gemini-2.0-flash": "gemini-2.0-flash"
+  "gemini-2.5-pro": "gemini-2.5-pro-preview"
+
+# ========================
+# 日志配置
+# ========================
+logging:
+  # 日志级别：debug | info | warn | error
+  level: "info"
+  
+  # 日志文件路径（留空则仅输出到控制台）
+  file: ""
+  
+  # 日志格式：json | text
+  format: "text"
+
+# ========================
+# 数据库配置
+# ========================
+database:
+  # SQLite 数据库文件路径
+  path: "data/mxlnapi.db"
+
+# ========================
+# 更新检测配置
+# ========================
+update:
+  enabled: true
+  check_interval: "24h"                   # 检查间隔
+  github_repo: "muxueliunian/mxlnapi"     # GitHub 仓库
+
+# ========================
+# 高级配置（通常无需修改）
+# ========================
+advanced:
+  # 请求超时（秒）
+  request_timeout: 120
+  
+  # 流式响应刷新间隔（毫秒）
+  stream_flush_interval: 100
+  
+  # 统计数据保留天数
+  stats_retention_days: 30

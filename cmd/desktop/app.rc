@@ -1,0 +1,9 @@
+// Windows Resource Script for MxlnAPI Desktop
+// Defines application icon with standard Windows resource IDs
+
+// IDI_APPLICATION (32512) - Standard Windows application icon ID
+// Used by Windows Shell for window icon and taskbar
+32512 ICON "../../assets/icon.ico"
+
+// ID 1 - Alternative icon ID (backup for some contexts)
+1 ICON "../../assets/icon.ico"

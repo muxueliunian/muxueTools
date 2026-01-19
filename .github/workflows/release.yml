@@ -1,0 +1,102 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 仅在推送 v 开头的 tag 时触发
+
+env:
+  GO_VERSION: '1.22'
+  NODE_VERSION: '20'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Build Frontend
+        run: |
+          cd web
+          npm ci
+          npm run build
+      
+      - name: Build Windows AMD64
+        shell: cmd
+        run: |
+          set CGO_ENABLED=1
+          set GOOS=windows
+          set GOARCH=amd64
+          go build -ldflags="-X main.Version=${{ steps.version.outputs.VERSION }}" -o dist/muxueTools-windows-amd64.exe ./cmd/desktop
+      
+      - name: Create ZIP packages
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/muxueTools-windows-amd64.exe -DestinationPath dist/muxueTools-windows-amd64.zip
+      
+      - name: Generate latest.json
+        shell: bash
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          TAG=${{ steps.version.outputs.TAG }}
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          mkdir -p dist/update
+          cat > dist/update/latest.json << EOF
+          {
+            "version": "$VERSION",
+            "release_date": "$DATE",
+            "changelog": "## $TAG\n\n请查看 GitHub Release 获取完整更新日志。",
+            "downloads": {
+              "windows-amd64": "https://mxlnuma.space/muxueTools/releases/$TAG/muxueTools-windows-amd64.zip"
+            },
+            "min_supported_version": "0.1.0",
+            "is_critical": false,
+            "announcement": ""
+          }
+          EOF
+          cat dist/update/latest.json
+      
+      - name: Prepare releases directory
+        shell: bash
+        run: |
+          TAG=${{ steps.version.outputs.TAG }}
+          mkdir -p dist/releases/$TAG
+          cp dist/*.zip dist/releases/$TAG/
+      
+      - name: Upload to Server via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME_TOOLS }}
+          password: ${{ secrets.FTP_PASSWORD_TOOLS }}
+          local-dir: ./dist/
+          server-dir: /
+          exclude: |
+            **/*.exe
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/muxueTools-windows-amd64.zip
+          generate_release_notes: true
