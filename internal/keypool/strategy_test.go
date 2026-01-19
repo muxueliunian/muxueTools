@@ -1,4 +1,4 @@
-// Package keypool provides API key pool management with multiple selection strategies.
+﻿// Package keypool provides API key pool management with multiple selection strategies.
 package keypool
 
 import (
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 )
 
 // ==================== Strategy Interface Tests ====================

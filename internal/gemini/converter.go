@@ -1,4 +1,4 @@
-// Package gemini provides format conversion between OpenAI and Gemini API formats.
+﻿// Package gemini provides format conversion between OpenAI and Gemini API formats.
 // This is a pure logic module with no IO operations.
 package gemini
 
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 )
 
 // ==================== Model Mappings ====================
@@ -234,6 +234,55 @@ func convertGenerationConfig(req *types.ChatCompletionRequest) *types.GeminiGene
 	}
 
 	return cfg
+}
+
+// ApplyModelSettings applies global model settings to a GeminiRequest.
+// It only applies settings if they are not already set in the request.
+// Priority: OpenAI request params > Global settings > Gemini defaults
+func ApplyModelSettings(req *types.GeminiRequest, settings *types.ModelSettingsConfig) {
+	if settings == nil {
+		return
+	}
+
+	// Apply System Prompt if not already set
+	if req.SystemInstruction == nil && settings.SystemPrompt != "" {
+		req.SystemInstruction = &types.GeminiContent{
+			Parts: []types.GeminiPart{{Text: settings.SystemPrompt}},
+		}
+	}
+
+	// Initialize GenerationConfig if needed
+	if req.GenerationConfig == nil {
+		req.GenerationConfig = &types.GeminiGenerationConfig{}
+	}
+
+	// Apply generation parameters if not already set
+	if req.GenerationConfig.Temperature == nil && settings.Temperature != nil {
+		req.GenerationConfig.Temperature = settings.Temperature
+	}
+
+	if req.GenerationConfig.TopP == nil && settings.TopP != nil {
+		req.GenerationConfig.TopP = settings.TopP
+	}
+
+	if req.GenerationConfig.TopK == nil && settings.TopK != nil {
+		req.GenerationConfig.TopK = settings.TopK
+	}
+
+	if req.GenerationConfig.MaxOutputTokens == nil && settings.MaxOutputTokens != nil {
+		req.GenerationConfig.MaxOutputTokens = settings.MaxOutputTokens
+	}
+
+	// Apply Gemini 2.5+ features
+	if settings.ThinkingLevel != nil && *settings.ThinkingLevel != "" {
+		req.GenerationConfig.ThinkingConfig = &types.ThinkingConfig{
+			ThinkingLevel: settings.ThinkingLevel,
+		}
+	}
+
+	if settings.MediaResolution != nil && *settings.MediaResolution != "" {
+		req.GenerationConfig.MediaResolution = settings.MediaResolution
+	}
 }
 
 // ==================== Response Conversion ====================

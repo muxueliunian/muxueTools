@@ -1,12 +1,12 @@
-# MxlnAPI 配置文件示例
-# 复制此文件为 config.yaml 并根据需要修改
+# MuxueTools 配置文件示例
+# 复制此文件为 config.yaml 并根据需要修�?
 
 # ========================
-# 服务器配置
+# 服务器配�?
 # ========================
 server:
   port: 8080                              # 监听端口
-  host: "0.0.0.0"                         # 绑定地址（0.0.0.0 表示所有接口）
+  host: "0.0.0.0"                         # 绑定地址�?.0.0.0 表示所有接口）
 
 # ========================
 # API Key 配置
@@ -26,23 +26,23 @@ keys:
       - "backup"
 
 # ========================
-# Key 池策略配置
+# Key 池策略配�?
 # ========================
 pool:
   # 选择策略：round_robin | random | least_used | weighted
   strategy: "round_robin"
   
-  # 触发 Rate Limit 后的冷却时间（秒）
+  # 触发 Rate Limit 后的冷却时间（秒�?
   cooldown_seconds: 60
   
-  # 单次请求最大重试次数（换 Key 重试）
+  # 单次请求最大重试次数（�?Key 重试�?
   max_retries: 3
 
 # ========================
 # 模型映射
 # ========================
 model_mappings:
-  # OpenAI 模型名 → Gemini 模型名
+  # OpenAI 模型�?�?Gemini 模型�?
   "gpt-4": "gemini-1.5-pro-latest"
   "gpt-4-turbo": "gemini-1.5-pro-latest"
   "gpt-4-vision-preview": "gemini-1.5-pro-latest"
@@ -50,7 +50,7 @@ model_mappings:
   "gpt-4o-mini": "gemini-1.5-flash-8b-latest"
   "gpt-3.5-turbo": "gemini-1.5-flash-latest"
   
-  # Gemini 原生模型名（透传）
+  # Gemini 原生模型名（透传�?
   "gemini-pro": "gemini-1.5-pro-latest"
   "gemini-flash": "gemini-1.5-flash-latest"
   "gemini-2.0-flash": "gemini-2.0-flash"
@@ -70,25 +70,25 @@ logging:
   format: "text"
 
 # ========================
-# 数据库配置
+# 数据库配�?
 # ========================
 database:
-  # SQLite 数据库文件路径
-  path: "data/mxlnapi.db"
+  # SQLite 数据库文件路�?
+  path: "data/MuxueTools.db"
 
 # ========================
-# 更新检测配置
+# 更新检测配�?
 # ========================
 update:
   enabled: true
-  check_interval: "24h"                   # 检查间隔
-  github_repo: "muxueliunian/mxlnapi"     # GitHub 仓库
+  check_interval: "24h"                   # 检查间�?
+  github_repo: "muxueliunian/MuxueTools"     # GitHub 仓库
 
 # ========================
-# 高级配置（通常无需修改）
+# 高级配置（通常无需修改�?
 # ========================
 advanced:
-  # 请求超时（秒）
+  # 请求超时（秒�?
   request_timeout: 120
   
   # 流式响应刷新间隔（毫秒）

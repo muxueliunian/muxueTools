@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-PNG to ICO converter for MxlnAPI
+PNG to ICO converter for MuxueTools
 Converts gugugaga.png to a multi-size .ico file
 Supports transparent background
 """
@@ -11,7 +11,7 @@ from pathlib import Path
 try:
     from PIL import Image
 except ImportError:
-    print("‚ùå Pillow library not found!")
+    print("‚ù?Pillow library not found!")
     print("\nPlease install it with:")
     print("  pip install Pillow")
     sys.exit(1)
@@ -19,13 +19,13 @@ except ImportError:
 def create_ico(input_png: str, output_ico: str):
     """Convert PNG to ICO with multiple sizes"""
     
-    print("MxlnAPI Icon Converter")
+    print("MuxueTools Icon Converter")
     print("=" * 40)
     
     # Check input
     input_path = Path(input_png)
     if not input_path.exists():
-        print(f"‚ùå Input file not found: {input_png}")
+        print(f"‚ù?Input file not found: {input_png}")
         sys.exit(1)
     
     print(f"üìÅ Input:  {input_path}")
@@ -33,9 +33,9 @@ def create_ico(input_png: str, output_ico: str):
     # Load PNG
     try:
         img = Image.open(input_path)
-        print(f"‚úì Loaded: {img.size[0]}x{img.size[1]} {img.mode}")
+        print(f"‚ú?Loaded: {img.size[0]}x{img.size[1]} {img.mode}")
     except Exception as e:
-        print(f"‚ùå Failed to load image: {e}")
+        print(f"‚ù?Failed to load image: {e}")
         sys.exit(1)
     
     # Create output directory
@@ -55,7 +55,7 @@ def create_ico(input_png: str, output_ico: str):
         if resized.mode != 'RGBA':
             resized = resized.convert('RGBA')
         icon_sizes.append(resized)
-        print(f"  ‚úì {size[0]}x{size[1]}")
+        print(f"  ‚ú?{size[0]}x{size[1]}")
     
     # Save as ICO
     try:
@@ -65,16 +65,16 @@ def create_ico(input_png: str, output_ico: str):
             sizes=[s.size for s in icon_sizes],
             append_images=icon_sizes[1:]
         )
-        print(f"\n‚úì Icon created: {output_path}")
+        print(f"\n‚ú?Icon created: {output_path}")
         
         file_size = output_path.stat().st_size
         print(f"  Size: {file_size / 1024:.2f} KB")
         
     except Exception as e:
-        print(f"‚ùå Failed to save ICO: {e}")
+        print(f"‚ù?Failed to save ICO: {e}")
         sys.exit(1)
     
-    print("\n‚úì Conversion complete!")
+    print("\n‚ú?Conversion complete!")
 
 if __name__ == "__main__":
     import argparse

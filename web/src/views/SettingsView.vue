@@ -5,9 +5,9 @@
  * Dependencies: Config API
  */
 import { ref, onMounted, computed } from 'vue'
-import { NCard, NForm, NFormItem, NSelect, NSwitch, NButton, NRadioGroup, NRadio, NInput, NInputNumber, NModal, useMessage, NDivider } from 'naive-ui'
-import { getConfig, updateConfig, checkUpdate, regenerateProxyKey, clearAllSessions, resetStats, type ConfigInfo, type UpdateInfo } from '../api/config'
-import { Save, CheckCircle2, Eye, EyeOff, RefreshCw, Shield, Trash2 } from 'lucide-vue-next'
+import { NCard, NForm, NFormItem, NSelect, NSwitch, NButton, NRadioGroup, NRadio, NInput, NInputNumber, NModal, useMessage, NDivider, NSlider } from 'naive-ui'
+import { getConfig, updateConfig, checkUpdate, regenerateProxyKey, clearAllSessions, resetStats, type ConfigInfo, type UpdateInfo, type ModelSettingsConfig } from '../api/config'
+import { Save, CheckCircle2, Eye, EyeOff, RefreshCw, Shield, Trash2, Cpu } from 'lucide-vue-next'
 import { useGlobalStore } from '@/stores/global'
 
 const globalStore = useGlobalStore()
@@ -16,7 +16,7 @@ const message = useMessage()
 const loading = ref(false)
 const checkingUpdate = ref(false)
 const regeneratingKey = ref(false)
-const activeTab = ref<'general' | 'security' | 'advanced'>('general')
+const activeTab = ref<'general' | 'security' | 'advanced' | 'model'>('general')
 const deletingChats = ref(false)
 const deletingStats = ref(false)
 const showDeleteChatsModal = ref(false)
@@ -38,6 +38,31 @@ const showProxyKey = ref(false)
 const ipWhitelistEnabled = ref(false)
 const whitelistIP = ref('')
 const proxyKey = ref('sk-mxln-proxy-local')
+
+// Model settings form fields
+const modelSettings = ref<ModelSettingsConfig>({
+    system_prompt: '',
+    temperature: null,
+    max_output_tokens: null,
+    top_p: null,
+    top_k: null,
+    thinking_level: null,
+    media_resolution: null
+})
+
+const thinkingLevelOptions = [
+    { label: 'Disabled', value: '' },
+    { label: 'Low', value: 'LOW' },
+    { label: 'Medium', value: 'MEDIUM' },
+    { label: 'High', value: 'HIGH' }
+]
+
+const mediaResolutionOptions = [
+    { label: 'Default', value: '' },
+    { label: 'Low (64 tokens)', value: 'MEDIA_RESOLUTION_LOW' },
+    { label: 'Medium (256 tokens)', value: 'MEDIA_RESOLUTION_MEDIUM' },
+    { label: 'High (scaling)', value: 'MEDIA_RESOLUTION_HIGH' }
+]
 
 const strategyOptions = [
     { label: 'Round Robin (Sequential)', value: 'round_robin' },
@@ -83,6 +108,18 @@ async function loadConfig() {
             // Sync update source
             if (res.data.update?.source) {
                 updateSource.value = res.data.update.source
+            }
+            // Sync model settings
+            if (res.data.model_settings) {
+                modelSettings.value = {
+                    system_prompt: res.data.model_settings.system_prompt || '',
+                    temperature: res.data.model_settings.temperature ?? null,
+                    max_output_tokens: res.data.model_settings.max_output_tokens ?? null,
+                    top_p: res.data.model_settings.top_p ?? null,
+                    top_k: res.data.model_settings.top_k ?? null,
+                    thinking_level: res.data.model_settings.thinking_level ?? null,
+                    media_resolution: res.data.model_settings.media_resolution ?? null
+                }
             }
         }
     } catch (e: any) {
@@ -130,6 +167,17 @@ async function handleSave() {
             configToSave.advanced = {
                 request_timeout: config.value.advanced.request_timeout
             }
+        }
+        
+        // Model settings configuration
+        configToSave.model_settings = {
+            system_prompt: modelSettings.value.system_prompt,
+            temperature: modelSettings.value.temperature,
+            max_output_tokens: modelSettings.value.max_output_tokens,
+            top_p: modelSettings.value.top_p,
+            top_k: modelSettings.value.top_k,
+            thinking_level: modelSettings.value.thinking_level,
+            media_resolution: modelSettings.value.media_resolution
         }
         
         const res = await updateConfig(configToSave as Partial<ConfigInfo>)
@@ -254,6 +302,18 @@ onMounted(() => {
                                 : 'text-claude-secondaryText dark:text-gray-500 hover:text-claude-text dark:hover:text-gray-300'
                         ]"
                     >Advanced</button>
+                    <button 
+                        @click="activeTab = 'model'"
+                        :class="[
+                            'px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-1.5',
+                            activeTab === 'model' 
+                                ? 'bg-white dark:bg-[#2A2A2E] text-claude-text dark:text-white shadow-sm' 
+                                : 'text-claude-secondaryText dark:text-gray-500 hover:text-claude-text dark:hover:text-gray-300'
+                        ]"
+                    >
+                        <Cpu class="w-3.5 h-3.5" />
+                        Model
+                    </button>
                 </div>
             </div>
 
@@ -453,7 +513,7 @@ onMounted(() => {
                             <n-form label-placement="top" class="mt-2">
                                 <n-form-item label="Database Location">
                                     <n-input 
-                                        value="./data/mxlnapi.db" 
+                                        value="./data/muxueTools.db" 
                                         readonly
                                         class="!bg-gray-50 dark:!bg-[#191919]"
                                     />
@@ -500,6 +560,139 @@ onMounted(() => {
                                             Reset
                                         </n-button>
                                     </div>
+                                </div>
+                            </n-form>
+                        </n-card>
+                    </template>
+
+                    <!-- Model Tab -->
+                    <template v-if="activeTab === 'model'">
+                        <!-- System Prompt -->
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="System Prompt">
+                            <n-form label-placement="top" class="mt-2">
+                                <n-form-item label="Default System Prompt">
+                                    <n-input 
+                                        v-model:value="modelSettings.system_prompt" 
+                                        type="textarea"
+                                        :autosize="{ minRows: 3, maxRows: 8 }"
+                                        placeholder="Enter a system prompt to be used for all requests..."
+                                        class="!bg-gray-50 dark:!bg-[#191919]"
+                                    />
+                                    <template #feedback>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">This prompt will be prepended to all chat requests.</span>
+                                    </template>
+                                </n-form-item>
+                            </n-form>
+                        </n-card>
+
+                        <!-- Generation Parameters -->
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Generation Parameters">
+                            <n-form label-placement="top" class="mt-2">
+                                <!-- Temperature -->
+                                <div class="mb-6">
+                                    <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Temperature</div>
+                                    <div class="flex gap-4 items-center">
+                                        <n-slider 
+                                            :value="modelSettings.temperature ?? 1" 
+                                            @update:value="v => modelSettings.temperature = v"
+                                            :min="0" 
+                                            :max="2" 
+                                            :step="0.1"
+                                            :tooltip="false"
+                                            class="flex-1"
+                                        />
+                                        <n-input-number 
+                                            v-model:value="modelSettings.temperature" 
+                                            :min="0" 
+                                            :max="2" 
+                                            :step="0.1"
+                                            :precision="1"
+                                            size="small"
+                                            class="!w-24"
+                                        />
+                                    </div>
+                                    <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">Controls randomness. Lower = more deterministic, Higher = more creative.</div>
+                                </div>
+
+                                <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
+
+                                <div class="grid grid-cols-2 gap-6">
+                                    <!-- Top-P -->
+                                    <div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Top-P</div>
+                                        <n-input-number 
+                                            v-model:value="modelSettings.top_p" 
+                                            :min="0" 
+                                            :max="1" 
+                                            :step="0.05"
+                                            :precision="2"
+                                            placeholder="0.95"
+                                            class="!w-full"
+                                        />
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">Nucleus sampling threshold</div>
+                                    </div>
+
+                                    <!-- Top-K -->
+                                    <div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Top-K</div>
+                                        <n-input-number 
+                                            v-model:value="modelSettings.top_k" 
+                                            :min="1" 
+                                            :max="100" 
+                                            :step="1"
+                                            placeholder="40"
+                                            class="!w-full"
+                                        />
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">Top-K sampling</div>
+                                    </div>
+                                </div>
+
+                                <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
+
+                                <!-- Max Output Tokens -->
+                                <n-form-item label="Max Output Tokens">
+                                    <n-input-number 
+                                        v-model:value="modelSettings.max_output_tokens" 
+                                        :min="1" 
+                                        :max="65536" 
+                                        :step="100"
+                                        placeholder="8192"
+                                        class="!w-full"
+                                    />
+                                    <template #feedback>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">Maximum number of tokens to generate.</span>
+                                    </template>
+                                </n-form-item>
+                            </n-form>
+                        </n-card>
+
+                        <!-- Advanced Model Features -->
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Advanced Features (Gemini 2.5+)">
+                            <n-form label-placement="top" class="mt-2">
+                                <div class="grid grid-cols-2 gap-6">
+                                    <!-- Thinking Level -->
+                                    <n-form-item label="Thinking Level">
+                                        <n-select 
+                                            v-model:value="modelSettings.thinking_level" 
+                                            :options="thinkingLevelOptions" 
+                                            placeholder="Select thinking level"
+                                        />
+                                        <template #feedback>
+                                            <span class="text-xs text-claude-secondaryText dark:text-gray-500">Controls reasoning depth for supported models.</span>
+                                        </template>
+                                    </n-form-item>
+
+                                    <!-- Media Resolution -->
+                                    <n-form-item label="Media Resolution">
+                                        <n-select 
+                                            v-model:value="modelSettings.media_resolution" 
+                                            :options="mediaResolutionOptions" 
+                                            placeholder="Select resolution"
+                                        />
+                                        <template #feedback>
+                                            <span class="text-xs text-claude-secondaryText dark:text-gray-500">Image/video processing resolution.</span>
+                                        </template>
+                                    </n-form-item>
                                 </div>
                             </n-form>
                         </n-card>

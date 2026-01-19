@@ -1,6 +1,16 @@
 import apiClient from './client'
 import type { ApiResponse } from './types'
 
+export interface ModelSettingsConfig {
+    system_prompt: string;
+    temperature?: number | null;
+    max_output_tokens?: number | null;
+    top_p?: number | null;
+    top_k?: number | null;
+    thinking_level?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+    media_resolution?: 'MEDIA_RESOLUTION_LOW' | 'MEDIA_RESOLUTION_MEDIUM' | 'MEDIA_RESOLUTION_HIGH' | null;
+}
+
 export interface ConfigInfo {
     server: {
         port: number;
@@ -27,6 +37,7 @@ export interface ConfigInfo {
     advanced?: {
         request_timeout: number;  // seconds
     };
+    model_settings?: ModelSettingsConfig;
 }
 
 export interface UpdateInfo {

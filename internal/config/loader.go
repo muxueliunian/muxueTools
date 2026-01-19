@@ -1,4 +1,4 @@
-// Package config provides configuration loading and management for MxlnAPI.
+﻿// Package config provides configuration loading and management for MuxueTools.
 package config
 
 import (
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 
 	"github.com/spf13/viper"
 )
@@ -288,7 +288,7 @@ func GenerateDefaultConfig(path string) error {
 }
 
 // minimalConfigTemplate is used when the example config is not available.
-const minimalConfigTemplate = `# MxlnAPI Configuration
+const minimalConfigTemplate = `# MuxueTools Configuration
 server:
   port: 8080
   host: "0.0.0.0"
@@ -304,9 +304,9 @@ logging:
   level: "info"
 
 database:
-  path: "data/mxlnapi.db"
+  path: "data/MuxueTools.db"
 
 update:
   enabled: true
-  github_repo: "muxueliunian/mxlnapi"
+  github_repo: "muxueliunian/MuxueTools"
 `

@@ -1,4 +1,4 @@
-// Package gemini provides format conversion between OpenAI and Gemini API formats.
+﻿// Package gemini provides format conversion between OpenAI and Gemini API formats.
 package gemini
 
 import (
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 )
 
 // ==================== Test Helpers ====================

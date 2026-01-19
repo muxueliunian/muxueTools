@@ -1,4 +1,4 @@
-// Package main is the entry point for the MxlnAPI server.
+﻿// Package main is the entry point for the MuxueTools server.
 package main
 
 import (
@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"mxlnapi/internal/api"
-	"mxlnapi/internal/config"
+	"muxueTools/internal/api"
+	"muxueTools/internal/config"
 
 	"github.com/sirupsen/logrus"
 )
@@ -142,30 +142,30 @@ func printBanner(logger *logrus.Logger) {
 		"version":    Version,
 		"build_time": BuildTime,
 		"commit":     GitCommit,
-	}).Info("MxlnAPI starting")
+	}).Info("MuxueTools starting")
 }
 
 // printVersion prints version information.
 func printVersion() {
-	fmt.Printf("MxlnAPI %s\n", Version)
+	fmt.Printf("MuxueTools %s\n", Version)
 	fmt.Printf("  Build Time: %s\n", BuildTime)
 	fmt.Printf("  Git Commit: %s\n", GitCommit)
 }
 
 // printUsage prints usage information.
 func printUsage() {
-	fmt.Println("MxlnAPI - Gemini to OpenAI API Proxy")
+	fmt.Println("MuxueTools - Gemini to OpenAI API Proxy")
 	fmt.Println()
 	fmt.Println("Usage:")
-	fmt.Println("  mxlnapi [options]")
+	fmt.Println("  MuxueTools [options]")
 	fmt.Println()
 	fmt.Println("Options:")
 	flag.PrintDefaults()
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  mxlnapi                     Start with default config")
-	fmt.Println("  mxlnapi -config ./my.yaml   Start with custom config file")
-	fmt.Println("  mxlnapi -version            Show version information")
+	fmt.Println("  MuxueTools                     Start with default config")
+	fmt.Println("  MuxueTools -config ./my.yaml   Start with custom config file")
+	fmt.Println("  MuxueTools -version            Show version information")
 	fmt.Println()
 	fmt.Println("Environment Variables:")
 	fmt.Println("  MXLN_SERVER_PORT            Override server port")

@@ -1,4 +1,4 @@
-// Package types defines all data transfer objects and core types for MxlnAPI.
+﻿// Package types defines all data transfer objects and core types for MuxueTools.
 package types
 
 import (
@@ -10,14 +10,15 @@ import (
 
 // Config represents the complete application configuration.
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server" yaml:"server"`
-	Keys     []KeyConfig    `mapstructure:"keys" yaml:"keys"`
-	Pool     PoolConfig     `mapstructure:"pool" yaml:"pool"`
-	Models   ModelMappings  `mapstructure:"model_mappings" yaml:"model_mappings"`
-	Logging  LoggingConfig  `mapstructure:"logging" yaml:"logging"`
-	Update   UpdateConfig   `mapstructure:"update" yaml:"update"`
-	Database DatabaseConfig `mapstructure:"database" yaml:"database"`
-	Advanced AdvancedConfig `mapstructure:"advanced" yaml:"advanced"`
+	Server        ServerConfig        `mapstructure:"server" yaml:"server"`
+	Keys          []KeyConfig         `mapstructure:"keys" yaml:"keys"`
+	Pool          PoolConfig          `mapstructure:"pool" yaml:"pool"`
+	Models        ModelMappings       `mapstructure:"model_mappings" yaml:"model_mappings"`
+	Logging       LoggingConfig       `mapstructure:"logging" yaml:"logging"`
+	Update        UpdateConfig        `mapstructure:"update" yaml:"update"`
+	Database      DatabaseConfig      `mapstructure:"database" yaml:"database"`
+	Advanced      AdvancedConfig      `mapstructure:"advanced" yaml:"advanced"`
+	ModelSettings ModelSettingsConfig `mapstructure:"model_settings" yaml:"model_settings"`
 }
 
 // ==================== Server Configuration ====================
@@ -165,7 +166,7 @@ type DatabaseConfig struct {
 // DefaultDatabaseConfig returns the default database configuration.
 func DefaultDatabaseConfig() DatabaseConfig {
 	return DatabaseConfig{
-		Path: "data/mxlnapi.db",
+		Path: "data/MuxueTools.db",
 	}
 }
 
@@ -183,7 +184,7 @@ func DefaultUpdateConfig() UpdateConfig {
 	return UpdateConfig{
 		Enabled:       true,
 		CheckInterval: "24h",
-		GithubRepo:    "muxueliunian/mxlnapi",
+		GithubRepo:    "muxueliunian/MuxueTools",
 	}
 }
 
@@ -219,27 +220,50 @@ func (c *AdvancedConfig) RequestTimeoutDuration() time.Duration {
 	return time.Duration(c.RequestTimeout) * time.Second
 }
 
+// ==================== Model Settings Configuration ====================
+
+// ModelSettingsConfig contains global model generation settings.
+type ModelSettingsConfig struct {
+	SystemPrompt    string   `mapstructure:"system_prompt" yaml:"system_prompt" json:"system_prompt"`
+	Temperature     *float64 `mapstructure:"temperature" yaml:"temperature" json:"temperature,omitempty"`
+	MaxOutputTokens *int     `mapstructure:"max_output_tokens" yaml:"max_output_tokens" json:"max_output_tokens,omitempty"`
+	TopP            *float64 `mapstructure:"top_p" yaml:"top_p" json:"top_p,omitempty"`
+	TopK            *int     `mapstructure:"top_k" yaml:"top_k" json:"top_k,omitempty"`
+	ThinkingLevel   *string  `mapstructure:"thinking_level" yaml:"thinking_level" json:"thinking_level,omitempty"`
+	MediaResolution *string  `mapstructure:"media_resolution" yaml:"media_resolution" json:"media_resolution,omitempty"`
+}
+
+// DefaultModelSettingsConfig returns the default model settings configuration.
+func DefaultModelSettingsConfig() ModelSettingsConfig {
+	return ModelSettingsConfig{
+		SystemPrompt: "",
+		// nil means use Gemini's defaults
+	}
+}
+
 // ==================== Admin API DTOs ====================
 
 // ConfigResponse represents the response for GET /api/config.
 type ConfigResponse struct {
-	Success bool             `json:"success"`
-	Data    ConfigData       `json:"data"`
+	Success bool       `json:"success"`
+	Data    ConfigData `json:"data"`
 }
 
 // ConfigData contains the configuration data returned to clients.
 // Excludes sensitive information like API keys.
 type ConfigData struct {
-	Server  ServerConfig  `json:"server"`
-	Pool    PoolConfig    `json:"pool"`
-	Logging LoggingConfig `json:"logging"`
-	Update  UpdateConfig  `json:"update"`
+	Server        ServerConfig        `json:"server"`
+	Pool          PoolConfig          `json:"pool"`
+	Logging       LoggingConfig       `json:"logging"`
+	Update        UpdateConfig        `json:"update"`
+	ModelSettings ModelSettingsConfig `json:"model_settings"`
 }
 
 // UpdateConfigRequest represents the request for PUT /api/config.
 type UpdateConfigRequest struct {
-	Pool    *PoolConfigUpdate    `json:"pool,omitempty"`
-	Logging *LoggingConfigUpdate `json:"logging,omitempty"`
+	Pool          *PoolConfigUpdate    `json:"pool,omitempty"`
+	Logging       *LoggingConfigUpdate `json:"logging,omitempty"`
+	ModelSettings *ModelSettingsConfig `json:"model_settings,omitempty"`
 }
 
 // PoolConfigUpdate contains partial pool configuration updates.
@@ -283,13 +307,14 @@ type UpdateCheckData struct {
 // DefaultConfig returns a configuration with all default values.
 func DefaultConfig() Config {
 	return Config{
-		Server:   DefaultServerConfig(),
-		Keys:     []KeyConfig{},
-		Pool:     DefaultPoolConfig(),
-		Models:   DefaultModelMappings(),
-		Logging:  DefaultLoggingConfig(),
-		Update:   DefaultUpdateConfig(),
-		Database: DefaultDatabaseConfig(),
-		Advanced: DefaultAdvancedConfig(),
+		Server:        DefaultServerConfig(),
+		Keys:          []KeyConfig{},
+		Pool:          DefaultPoolConfig(),
+		Models:        DefaultModelMappings(),
+		Logging:       DefaultLoggingConfig(),
+		Update:        DefaultUpdateConfig(),
+		Database:      DefaultDatabaseConfig(),
+		Advanced:      DefaultAdvancedConfig(),
+		ModelSettings: DefaultModelSettingsConfig(),
 	}
 }

@@ -1,4 +1,4 @@
-// Package gemini provides the Gemini API client with format conversion.
+﻿// Package gemini provides the Gemini API client with format conversion.
 package gemini
 
 import (
@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 )
 
 // ==================== Client Options ====================
@@ -41,6 +41,17 @@ func WithRequestTimeout(timeout time.Duration) ClientOption {
 	}
 }
 
+// ModelSettingsGetter is a function that returns the current model settings.
+// This allows the client to get settings without importing storage package.
+type ModelSettingsGetter func() *types.ModelSettingsConfig
+
+// WithModelSettings sets the model settings getter.
+func WithModelSettings(getter ModelSettingsGetter) ClientOption {
+	return func(c *Client) {
+		c.modelSettingsGetter = getter
+	}
+}
+
 // ==================== Key Pool Interface ====================
 
 // KeyPoolInterface defines the interface for key pool operations.
@@ -65,10 +76,11 @@ type StreamEvent struct {
 
 // Client is the Gemini API client that handles requests and format conversion.
 type Client struct {
-	httpClient     *http.Client
-	pool           KeyPoolInterface
-	baseURL        string
-	requestTimeout time.Duration
+	httpClient          *http.Client
+	pool                KeyPoolInterface
+	baseURL             string
+	requestTimeout      time.Duration
+	modelSettingsGetter ModelSettingsGetter
 }
 
 // NewClient creates a new Gemini API client.
@@ -107,6 +119,11 @@ func (c *Client) ChatCompletion(ctx context.Context, req *types.ChatCompletionRe
 	geminiReq, err := ConvertOpenAIRequest(req)
 	if err != nil {
 		return nil, err
+	}
+
+	// 2.5. Apply global model settings if available
+	if c.modelSettingsGetter != nil {
+		ApplyModelSettings(geminiReq, c.modelSettingsGetter())
 	}
 
 	// 3. Map model name
@@ -162,6 +179,11 @@ func (c *Client) ChatCompletionStream(ctx context.Context, req *types.ChatComple
 	if err != nil {
 		c.pool.ReleaseKey(key)
 		return nil, err
+	}
+
+	// 2.5. Apply global model settings if available
+	if c.modelSettingsGetter != nil {
+		ApplyModelSettings(geminiReq, c.modelSettingsGetter())
 	}
 
 	// 3. Map model name

@@ -1,11 +1,11 @@
-// Package storage provides SQLite-based persistence layer for MxlnAPI.
+﻿// Package storage provides SQLite-based persistence layer for MuxueTools.
 package storage
 
 import (
 	"fmt"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

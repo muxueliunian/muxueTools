@@ -1,4 +1,4 @@
-// Package gemini provides the Gemini API client with format conversion.
+﻿// Package gemini provides the Gemini API client with format conversion.
 package gemini
 
 import (
@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 )
 
 // ==================== Mock KeyPool ====================

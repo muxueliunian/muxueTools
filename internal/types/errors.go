@@ -1,4 +1,4 @@
-// Package types defines all data transfer objects and core types for MxlnAPI.
+﻿// Package types defines all data transfer objects and core types for MuxueTools.
 package types
 
 import (

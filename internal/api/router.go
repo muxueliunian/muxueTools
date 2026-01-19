@@ -1,11 +1,11 @@
-// Package api provides HTTP API handlers and routing for MxlnAPI.
+﻿// Package api provides HTTP API handlers and routing for MuxueTools.
 package api
 
 import (
-	"mxlnapi/internal/gemini"
-	"mxlnapi/internal/keypool"
-	"mxlnapi/internal/storage"
-	"mxlnapi/internal/types"
+	"muxueTools/internal/gemini"
+	"muxueTools/internal/keypool"
+	"muxueTools/internal/storage"
+	"muxueTools/internal/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -149,7 +149,7 @@ func NewRouter(cfg *RouterConfig) *gin.Engine {
 		// No WebRoot: serve API info at root
 		engine.GET("/", func(c *gin.Context) {
 			c.JSON(200, gin.H{
-				"name":    "MxlnAPI",
+				"name":    "MuxueTools",
 				"version": cfg.Version,
 				"docs":    "/v1/models",
 				"health":  "/health",

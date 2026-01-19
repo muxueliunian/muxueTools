@@ -1,4 +1,4 @@
-// Package api provides HTTP API handlers and routing for MxlnAPI.
+﻿// Package api provides HTTP API handlers and routing for MuxueTools.
 package api
 
 import (
@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"mxlnapi/internal/keypool"
-	"mxlnapi/internal/types"
+	"muxueTools/internal/keypool"
+	"muxueTools/internal/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -64,7 +64,7 @@ func createTestRouter() (*gin.Engine, *keypool.Pool) {
 	engine.GET("/ping", Ping)
 
 	// Admin handler
-	adminHandler := NewAdminHandler(pool, logger)
+	adminHandler := NewAdminHandler(pool, logger, nil) // nil storage for tests
 	api := engine.Group("/api")
 	{
 		keys := api.Group("/keys")
@@ -86,7 +86,7 @@ func createTestRouter() (*gin.Engine, *keypool.Pool) {
 	// Root route
 	engine.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"name":    "MxlnAPI",
+			"name":    "MuxueTools",
 			"version": "test",
 		})
 	})
@@ -160,8 +160,8 @@ func TestRootRoute_ReturnsInfo(t *testing.T) {
 		t.Errorf("Failed to parse response: %v", err)
 	}
 
-	if resp["name"] != "MxlnAPI" {
-		t.Errorf("Expected name 'MxlnAPI', got '%v'", resp["name"])
+	if resp["name"] != "MuxueTools" {
+		t.Errorf("Expected name 'MuxueTools', got '%v'", resp["name"])
 	}
 }
 

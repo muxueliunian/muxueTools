@@ -1,4 +1,4 @@
-// Package storage provides SQLite-based persistence layer for MxlnAPI.
+﻿// Package storage provides SQLite-based persistence layer for MuxueTools.
 package storage
 
 import (
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"

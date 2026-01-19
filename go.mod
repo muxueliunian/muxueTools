@@ -1,4 +1,4 @@
-module mxlnapi
+module muxueTools
 
 go 1.25.5
 

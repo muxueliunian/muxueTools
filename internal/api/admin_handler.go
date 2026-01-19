@@ -1,4 +1,4 @@
-// Package api provides HTTP API handlers and routing for MxlnAPI.
+﻿// Package api provides HTTP API handlers and routing for MuxueTools.
 package api
 
 import (
@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"mxlnapi/internal/config"
-	"mxlnapi/internal/keypool"
-	"mxlnapi/internal/storage"
-	"mxlnapi/internal/types"
+	"muxueTools/internal/config"
+	"muxueTools/internal/keypool"
+	"muxueTools/internal/storage"
+	"muxueTools/internal/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -733,6 +733,48 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 		}
 	}
 
+	// Get model settings from storage
+	var modelSettings gin.H = gin.H{
+		"system_prompt":     "",
+		"temperature":       nil,
+		"max_output_tokens": nil,
+		"top_p":             nil,
+		"top_k":             nil,
+		"thinking_level":    nil,
+		"media_resolution":  nil,
+	}
+	if h.storage != nil {
+		if sp, _ := h.storage.GetConfig("model_settings.system_prompt"); sp != "" {
+			modelSettings["system_prompt"] = sp
+		}
+		if temp, _ := h.storage.GetConfig("model_settings.temperature"); temp != "" {
+			if parsed, err := strconv.ParseFloat(temp, 64); err == nil {
+				modelSettings["temperature"] = parsed
+			}
+		}
+		if tokens, _ := h.storage.GetConfig("model_settings.max_output_tokens"); tokens != "" {
+			if parsed, err := strconv.Atoi(tokens); err == nil {
+				modelSettings["max_output_tokens"] = parsed
+			}
+		}
+		if topP, _ := h.storage.GetConfig("model_settings.top_p"); topP != "" {
+			if parsed, err := strconv.ParseFloat(topP, 64); err == nil {
+				modelSettings["top_p"] = parsed
+			}
+		}
+		if topK, _ := h.storage.GetConfig("model_settings.top_k"); topK != "" {
+			if parsed, err := strconv.Atoi(topK); err == nil {
+				modelSettings["top_k"] = parsed
+			}
+		}
+		if level, _ := h.storage.GetConfig("model_settings.thinking_level"); level != "" {
+			modelSettings["thinking_level"] = level
+		}
+		if resolution, _ := h.storage.GetConfig("model_settings.media_resolution"); resolution != "" {
+			modelSettings["media_resolution"] = resolution
+		}
+	}
+
 	// Return sanitized config (without sensitive data)
 	sanitized := gin.H{
 		"server": gin.H{
@@ -760,6 +802,7 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 		"advanced": gin.H{
 			"request_timeout": requestTimeout,
 		},
+		"model_settings": modelSettings,
 	}
 
 	RespondSuccess(c, sanitized)
@@ -767,11 +810,12 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 
 // UpdateConfigRequest represents the request to update configuration.
 type UpdateConfigRequest struct {
-	Pool     *PoolConfigUpdate     `json:"pool,omitempty"`
-	Logging  *LoggingConfigUpdate  `json:"logging,omitempty"`
-	Update   *UpdateConfigUpdate   `json:"update,omitempty"`
-	Security *SecurityConfigUpdate `json:"security,omitempty"`
-	Advanced *AdvancedConfigUpdate `json:"advanced,omitempty"`
+	Pool          *PoolConfigUpdate          `json:"pool,omitempty"`
+	Logging       *LoggingConfigUpdate       `json:"logging,omitempty"`
+	Update        *UpdateConfigUpdate        `json:"update,omitempty"`
+	Security      *SecurityConfigUpdate      `json:"security,omitempty"`
+	Advanced      *AdvancedConfigUpdate      `json:"advanced,omitempty"`
+	ModelSettings *ModelSettingsConfigUpdate `json:"model_settings,omitempty"`
 }
 
 // PoolConfigUpdate represents pool configuration updates.
@@ -802,6 +846,17 @@ type SecurityConfigUpdate struct {
 // AdvancedConfigUpdate represents advanced configuration updates.
 type AdvancedConfigUpdate struct {
 	RequestTimeout *int `json:"request_timeout,omitempty"`
+}
+
+// ModelSettingsConfigUpdate represents model settings configuration updates.
+type ModelSettingsConfigUpdate struct {
+	SystemPrompt    *string  `json:"system_prompt,omitempty"`
+	Temperature     *float64 `json:"temperature,omitempty"`
+	MaxOutputTokens *int     `json:"max_output_tokens,omitempty"`
+	TopP            *float64 `json:"top_p,omitempty"`
+	TopK            *int     `json:"top_k,omitempty"`
+	ThinkingLevel   *string  `json:"thinking_level,omitempty"`
+	MediaResolution *string  `json:"media_resolution,omitempty"`
 }
 
 // UpdateConfig handles PUT /api/config - Update configuration.
@@ -974,6 +1029,95 @@ func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 		}
 	}
 
+	// Process model settings configuration
+	if req.ModelSettings != nil {
+		if req.ModelSettings.SystemPrompt != nil {
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.system_prompt", *req.ModelSettings.SystemPrompt)
+			}
+			updated["model_settings.system_prompt"] = *req.ModelSettings.SystemPrompt
+		}
+
+		if req.ModelSettings.Temperature != nil {
+			temp := *req.ModelSettings.Temperature
+			if temp < 0 || temp > 2 {
+				RespondBadRequest(c, "Temperature must be between 0 and 2")
+				return
+			}
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.temperature", strconv.FormatFloat(temp, 'f', 2, 64))
+			}
+			updated["model_settings.temperature"] = temp
+		}
+
+		if req.ModelSettings.MaxOutputTokens != nil {
+			tokens := *req.ModelSettings.MaxOutputTokens
+			if tokens < 1 || tokens > 65536 {
+				RespondBadRequest(c, "Max output tokens must be between 1 and 65536")
+				return
+			}
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.max_output_tokens", strconv.Itoa(tokens))
+			}
+			updated["model_settings.max_output_tokens"] = tokens
+		}
+
+		if req.ModelSettings.TopP != nil {
+			topP := *req.ModelSettings.TopP
+			if topP < 0 || topP > 1 {
+				RespondBadRequest(c, "Top-P must be between 0 and 1")
+				return
+			}
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.top_p", strconv.FormatFloat(topP, 'f', 2, 64))
+			}
+			updated["model_settings.top_p"] = topP
+		}
+
+		if req.ModelSettings.TopK != nil {
+			topK := *req.ModelSettings.TopK
+			if topK < 1 || topK > 100 {
+				RespondBadRequest(c, "Top-K must be between 1 and 100")
+				return
+			}
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.top_k", strconv.Itoa(topK))
+			}
+			updated["model_settings.top_k"] = topK
+		}
+
+		if req.ModelSettings.ThinkingLevel != nil {
+			level := *req.ModelSettings.ThinkingLevel
+			validLevels := map[string]bool{"LOW": true, "MEDIUM": true, "HIGH": true, "": true}
+			if !validLevels[level] {
+				RespondBadRequest(c, "Thinking level must be LOW, MEDIUM, HIGH, or empty")
+				return
+			}
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.thinking_level", level)
+			}
+			updated["model_settings.thinking_level"] = level
+		}
+
+		if req.ModelSettings.MediaResolution != nil {
+			resolution := *req.ModelSettings.MediaResolution
+			validResolutions := map[string]bool{
+				"MEDIA_RESOLUTION_LOW":    true,
+				"MEDIA_RESOLUTION_MEDIUM": true,
+				"MEDIA_RESOLUTION_HIGH":   true,
+				"":                        true,
+			}
+			if !validResolutions[resolution] {
+				RespondBadRequest(c, "Invalid media resolution")
+				return
+			}
+			if h.storage != nil {
+				_ = h.storage.SetConfig("model_settings.media_resolution", resolution)
+			}
+			updated["model_settings.media_resolution"] = resolution
+		}
+	}
+
 	h.logger.WithFields(logrus.Fields{
 		"updated": updated,
 	}).Info("Configuration updated successfully")
@@ -1125,7 +1269,7 @@ func (h *AdminHandler) fetchGitHubUpdate(currentVersion string) (UpdateCheckData
 		return UpdateCheckData{}, err
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "MxlnAPI-Updater")
+	req.Header.Set("User-Agent", "MuxueTools-Updater")
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)

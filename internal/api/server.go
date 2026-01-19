@@ -1,4 +1,4 @@
-// Package api provides HTTP API handlers and routing for MxlnAPI.
+﻿// Package api provides HTTP API handlers and routing for MuxueTools.
 package api
 
 import (
@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"mxlnapi/internal/gemini"
-	"mxlnapi/internal/keypool"
-	"mxlnapi/internal/storage"
-	"mxlnapi/internal/types"
+	"muxueTools/internal/gemini"
+	"muxueTools/internal/keypool"
+	"muxueTools/internal/storage"
+	"muxueTools/internal/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -19,7 +19,7 @@ import (
 
 // ==================== Server ====================
 
-// Server represents the MxlnAPI HTTP server.
+// Server represents the MuxueTools HTTP server.
 type Server struct {
 	engine     *gin.Engine
 	httpServer *http.Server
@@ -56,7 +56,7 @@ func WithWebRoot(path string) ServerOption {
 	}
 }
 
-// NewServer creates a new MxlnAPI server.
+// NewServer creates a new MuxueTools server.
 func NewServer(cfg *types.Config, opts ...ServerOption) (*Server, error) {
 	// Create server with defaults
 	server := &Server{
@@ -92,10 +92,18 @@ func NewServer(cfg *types.Config, opts ...ServerOption) (*Server, error) {
 	server.pool = pool
 
 	// Initialize Gemini client
-	server.client = gemini.NewClient(
-		pool,
-		gemini.WithRequestTimeout(time.Duration(cfg.Advanced.RequestTimeout)*time.Second),
-	)
+	clientOpts := []gemini.ClientOption{
+		gemini.WithRequestTimeout(time.Duration(cfg.Advanced.RequestTimeout) * time.Second),
+	}
+
+	// Add model settings getter if storage is available
+	if server.storage != nil {
+		clientOpts = append(clientOpts, gemini.WithModelSettings(func() *types.ModelSettingsConfig {
+			return server.getModelSettings()
+		}))
+	}
+
+	server.client = gemini.NewClient(pool, clientOpts...)
 
 	// Create router
 	routerConfig := &RouterConfig{
@@ -221,7 +229,7 @@ func (s *Server) Run() error {
 	s.logger.WithFields(logrus.Fields{
 		"addr":    s.config.Server.Addr(),
 		"version": s.version,
-	}).Info("Starting MxlnAPI server")
+	}).Info("Starting MuxueTools server")
 
 	// Start server
 	if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -285,6 +293,73 @@ func (s *Server) Addr() string {
 // Storage returns the storage instance.
 func (s *Server) Storage() *storage.Storage {
 	return s.storage
+}
+
+// getModelSettings reads model settings from storage.
+func (s *Server) getModelSettings() *types.ModelSettingsConfig {
+	if s.storage == nil {
+		return nil
+	}
+
+	settings := &types.ModelSettingsConfig{}
+
+	// Read System Prompt
+	if sp, _ := s.storage.GetConfig("model_settings.system_prompt"); sp != "" {
+		settings.SystemPrompt = sp
+	}
+
+	// Read Temperature
+	if temp, _ := s.storage.GetConfig("model_settings.temperature"); temp != "" {
+		if parsed, err := parseFloat64(temp); err == nil {
+			settings.Temperature = &parsed
+		}
+	}
+
+	// Read Max Output Tokens
+	if tokens, _ := s.storage.GetConfig("model_settings.max_output_tokens"); tokens != "" {
+		if parsed, err := parseInt(tokens); err == nil {
+			settings.MaxOutputTokens = &parsed
+		}
+	}
+
+	// Read Top-P
+	if topP, _ := s.storage.GetConfig("model_settings.top_p"); topP != "" {
+		if parsed, err := parseFloat64(topP); err == nil {
+			settings.TopP = &parsed
+		}
+	}
+
+	// Read Top-K
+	if topK, _ := s.storage.GetConfig("model_settings.top_k"); topK != "" {
+		if parsed, err := parseInt(topK); err == nil {
+			settings.TopK = &parsed
+		}
+	}
+
+	// Read Thinking Level
+	if level, _ := s.storage.GetConfig("model_settings.thinking_level"); level != "" {
+		settings.ThinkingLevel = &level
+	}
+
+	// Read Media Resolution
+	if resolution, _ := s.storage.GetConfig("model_settings.media_resolution"); resolution != "" {
+		settings.MediaResolution = &resolution
+	}
+
+	return settings
+}
+
+// Helper functions for parsing
+func parseFloat64(s string) (float64, error) {
+	var f float64
+	_, err := fmt.Sscanf(s, "%f", &f)
+	return f, err
+}
+
+func parseInt(s string) (int, error) {
+	var i int
+	_, err := fmt.Sscanf(s, "%d", &i)
+	return i, err
 }
 
 // Close closes the server and all resources.

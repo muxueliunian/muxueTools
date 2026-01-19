@@ -52,4 +52,3 @@ configs/local/
 # Agent development tools (local only)
 .agent/
 # Task prompts (internal only)
-docs/

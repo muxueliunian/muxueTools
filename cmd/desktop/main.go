@@ -1,4 +1,4 @@
-// Package main is the entry point for MxlnAPI desktop application.
+﻿// Package main is the entry point for MuxueTools desktop application.
 // It embeds the web frontend in a WebView window for native-like experience.
 package main
 
@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"mxlnapi/internal/api"
-	"mxlnapi/internal/config"
+	"muxueTools/internal/api"
+	"muxueTools/internal/config"
 
 	"github.com/sirupsen/logrus"
 	webview "github.com/webview/webview_go"
@@ -40,7 +40,7 @@ func main() {
 
 	// Handle version flag
 	if *showVer {
-		fmt.Printf("MxlnAPI Desktop %s\n", Version)
+		fmt.Printf("MuxueTools Desktop %s\n", Version)
 		fmt.Printf("  Build Time: %s\n", BuildTime)
 		fmt.Printf("  Git Commit: %s\n", GitCommit)
 		os.Exit(0)
@@ -56,7 +56,7 @@ func main() {
 	logger.WithFields(logrus.Fields{
 		"version": Version,
 		"mode":    "desktop",
-	}).Info("MxlnAPI Desktop starting")
+	}).Info("MuxueTools Desktop starting")
 
 	// Load configuration
 	var err error
@@ -184,7 +184,7 @@ func main() {
 	}
 	defer w.Destroy()
 
-	w.SetTitle("MxlnAPI")
+	w.SetTitle("MuxueTools")
 	w.SetSize(1024, 768, webview.HintNone)
 
 	// Determine navigation URL based on mode
@@ -231,7 +231,7 @@ func main() {
 		logger.WithError(err).Warn("Failed to close server resources")
 	}
 
-	logger.Info("MxlnAPI Desktop exited")
+	logger.Info("MuxueTools Desktop exited")
 }
 
 // fileExists checks if a file exists and is not a directory.

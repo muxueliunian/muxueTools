@@ -1,4 +1,4 @@
-// Package api provides HTTP API handlers and routing for MxlnAPI.
+﻿// Package api provides HTTP API handlers and routing for MuxueTools.
 package api
 
 import (
@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"mxlnapi/internal/storage"
-	"mxlnapi/internal/types"
+	"muxueTools/internal/storage"
+	"muxueTools/internal/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

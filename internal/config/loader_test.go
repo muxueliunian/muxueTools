@@ -1,11 +1,11 @@
-package config
+﻿package config
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"mxlnapi/internal/types"
+	"muxueTools/internal/types"
 )
 
 // TestLoader_Load_DefaultValues tests that default values are used when no config file exists.

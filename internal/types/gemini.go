@@ -1,14 +1,14 @@
-// Package types defines all data transfer objects and core types for MxlnAPI.
+﻿// Package types defines all data transfer objects and core types for MuxueTools.
 package types
 
 // ==================== Gemini API Request ====================
 
 // GeminiRequest represents a request to Gemini's generateContent endpoint.
 type GeminiRequest struct {
-	Contents          []GeminiContent          `json:"contents"`
-	SystemInstruction *GeminiContent           `json:"systemInstruction,omitempty"`
-	GenerationConfig  *GeminiGenerationConfig  `json:"generationConfig,omitempty"`
-	SafetySettings    []GeminiSafetySetting    `json:"safetySettings,omitempty"`
+	Contents          []GeminiContent         `json:"contents"`
+	SystemInstruction *GeminiContent          `json:"systemInstruction,omitempty"`
+	GenerationConfig  *GeminiGenerationConfig `json:"generationConfig,omitempty"`
+	SafetySettings    []GeminiSafetySetting   `json:"safetySettings,omitempty"`
 }
 
 // GeminiContent represents a single content block (user/model turn).
@@ -20,7 +20,7 @@ type GeminiContent struct {
 // GeminiPart represents a single part within a content block.
 // Can be text, inline data (image), or file data.
 type GeminiPart struct {
-	Text       string           `json:"text,omitempty"`
+	Text       string            `json:"text,omitempty"`
 	InlineData *GeminiInlineData `json:"inlineData,omitempty"`
 	FileData   *GeminiFileData   `json:"fileData,omitempty"`
 }
@@ -39,12 +39,20 @@ type GeminiFileData struct {
 
 // GeminiGenerationConfig contains generation parameters.
 type GeminiGenerationConfig struct {
-	Temperature     *float64 `json:"temperature,omitempty"`
-	TopP            *float64 `json:"topP,omitempty"`
-	TopK            *int     `json:"topK,omitempty"`
-	MaxOutputTokens *int     `json:"maxOutputTokens,omitempty"`
-	StopSequences   []string `json:"stopSequences,omitempty"`
-	CandidateCount  *int     `json:"candidateCount,omitempty"`
+	Temperature     *float64        `json:"temperature,omitempty"`
+	TopP            *float64        `json:"topP,omitempty"`
+	TopK            *int            `json:"topK,omitempty"`
+	MaxOutputTokens *int            `json:"maxOutputTokens,omitempty"`
+	StopSequences   []string        `json:"stopSequences,omitempty"`
+	CandidateCount  *int            `json:"candidateCount,omitempty"`
+	ThinkingConfig  *ThinkingConfig `json:"thinkingConfig,omitempty"`  // Gemini 2.5+ thinking mode
+	MediaResolution *string         `json:"mediaResolution,omitempty"` // MEDIA_RESOLUTION_LOW/MEDIUM/HIGH
+}
+
+// ThinkingConfig configures reasoning mode for Gemini 2.5+ models.
+type ThinkingConfig struct {
+	ThinkingBudget *int    `json:"thinkingBudget,omitempty"` // Max tokens for thinking process
+	ThinkingLevel  *string `json:"thinkingLevel,omitempty"`  // LOW, MEDIUM, HIGH
 }
 
 // GeminiSafetySetting configures safety thresholds.
@@ -57,17 +65,17 @@ type GeminiSafetySetting struct {
 
 // GeminiResponse represents a response from Gemini's generateContent endpoint.
 type GeminiResponse struct {
-	Candidates     []GeminiCandidate    `json:"candidates"`
-	UsageMetadata  *GeminiUsageMetadata `json:"usageMetadata,omitempty"`
+	Candidates     []GeminiCandidate     `json:"candidates"`
+	UsageMetadata  *GeminiUsageMetadata  `json:"usageMetadata,omitempty"`
 	PromptFeedback *GeminiPromptFeedback `json:"promptFeedback,omitempty"`
 }
 
 // GeminiCandidate represents a single generation candidate.
 type GeminiCandidate struct {
-	Content       *GeminiContent          `json:"content,omitempty"`
-	FinishReason  string                  `json:"finishReason,omitempty"` // "STOP", "MAX_TOKENS", "SAFETY", "RECITATION"
-	SafetyRatings []GeminiSafetyRating    `json:"safetyRatings,omitempty"`
-	Index         int                     `json:"index"`
+	Content       *GeminiContent       `json:"content,omitempty"`
+	FinishReason  string               `json:"finishReason,omitempty"` // "STOP", "MAX_TOKENS", "SAFETY", "RECITATION"
+	SafetyRatings []GeminiSafetyRating `json:"safetyRatings,omitempty"`
+	Index         int                  `json:"index"`
 }
 
 // GeminiSafetyRating provides safety analysis for content.
@@ -119,7 +127,7 @@ type GeminiModelsResponse struct {
 
 // GeminiModelInfo represents information about a single Gemini model.
 type GeminiModelInfo struct {
-	Name                       string   `json:"name"`                       // e.g., "models/gemini-pro"
+	Name                       string   `json:"name"` // e.g., "models/gemini-pro"
 	DisplayName                string   `json:"displayName"`
 	Description                string   `json:"description"`
 	Version                    string   `json:"version"`
@@ -148,10 +156,10 @@ const (
 	SafetyCategoryDangerousContent = "HARM_CATEGORY_DANGEROUS_CONTENT"
 
 	// Safety thresholds
-	SafetyThresholdBlockNone         = "BLOCK_NONE"
-	SafetyThresholdBlockLowAndAbove  = "BLOCK_LOW_AND_ABOVE"
+	SafetyThresholdBlockNone           = "BLOCK_NONE"
+	SafetyThresholdBlockLowAndAbove    = "BLOCK_LOW_AND_ABOVE"
 	SafetyThresholdBlockMediumAndAbove = "BLOCK_MEDIUM_AND_ABOVE"
-	SafetyThresholdBlockHighAndAbove = "BLOCK_ONLY_HIGH"
+	SafetyThresholdBlockHighAndAbove   = "BLOCK_ONLY_HIGH"
 )
 
 // ==================== Helper Methods ====================

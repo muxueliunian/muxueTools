@@ -1,5 +1,5 @@
-# MxlnAPI Build Script
-# This script builds MxlnAPI for different platforms and targets.
+# MuxueTools Build Script
+# This script builds MuxueTools for different platforms and targets.
 
 param(
     [Parameter(Position = 0)]
@@ -34,6 +34,44 @@ function Ensure-BinDir {
     }
 }
 
+function Build-Frontend {
+    Write-Header "Building Frontend (Vite + Vue)"
+    
+    $WebDir = Join-Path $ProjectRoot "web"
+    
+    if (-not (Test-Path $WebDir)) {
+        Write-Host "Error: Web directory not found at $WebDir" -ForegroundColor Red
+        return $false
+    }
+    
+    Push-Location $WebDir
+    try {
+        # Check if node_modules exists
+        if (-not (Test-Path "node_modules")) {
+            Write-Host "Installing dependencies..." -ForegroundColor Yellow
+            npm ci
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "npm ci failed!" -ForegroundColor Red
+                return $false
+            }
+        }
+        
+        # Build frontend
+        Write-Host "Building frontend..." -ForegroundColor Cyan
+        npm run build
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Frontend build failed!" -ForegroundColor Red
+            return $false
+        }
+        
+        Write-Host "Frontend built successfully: web/dist" -ForegroundColor Green
+        return $true
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Build-Server {
     Write-Header "Building Server (Pure Go)"
     
@@ -41,7 +79,7 @@ function Build-Server {
     $env:GOOS = "windows"
     $env:GOARCH = "amd64"
     
-    $OutputPath = Join-Path $BinDir "mxlnapi-server.exe"
+    $OutputPath = Join-Path $BinDir "muxueTools-server.exe"
     
     Push-Location $ProjectRoot
     try {
@@ -133,7 +171,7 @@ function Build-Desktop {
     $env:GOOS = "windows"
     $env:GOARCH = $Arch
     
-    $OutputName = if ($Suffix) { "mxlnapi$Suffix.exe" } else { "mxlnapi.exe" }
+    $OutputName = if ($Suffix) { "muxueTools$Suffix.exe" } else { "muxueTools.exe" }
     $OutputPath = Join-Path $BinDir $OutputName
     
     # -H windowsgui hides the console window
@@ -161,7 +199,7 @@ function Clean-Build {
 }
 
 # Main execution
-Write-Host "MxlnAPI Build Script" -ForegroundColor Magenta
+Write-Host "MuxueTools Build Script" -ForegroundColor Magenta
 Write-Host "Version: $Version | Commit: $GitCommit" -ForegroundColor DarkGray
 
 Ensure-BinDir
@@ -171,14 +209,26 @@ switch ($Target) {
         Build-Server
     }
     "desktop" {
-        Build-Desktop -Arch "amd64"
+        # Build frontend first, then desktop
+        $frontendOk = Build-Frontend
+        if ($frontendOk) {
+            Build-Desktop -Arch "amd64"
+        }
     }
     "desktop-x86" {
-        Build-Desktop -Arch "386" -Suffix "-x86"
+        # Build frontend first, then desktop x86
+        $frontendOk = Build-Frontend
+        if ($frontendOk) {
+            Build-Desktop -Arch "386" -Suffix "-x86"
+        }
     }
     "all" {
-        Build-Server
-        Build-Desktop -Arch "amd64"
+        # Build frontend first
+        $frontendOk = Build-Frontend
+        if ($frontendOk) {
+            Build-Server
+            Build-Desktop -Arch "amd64"
+        }
     }
     "clean" {
         Clean-Build
@@ -186,3 +236,4 @@ switch ($Target) {
 }
 
 Write-Host "`nBuild complete!" -ForegroundColor Green
+

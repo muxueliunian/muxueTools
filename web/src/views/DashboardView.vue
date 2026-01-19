@@ -8,6 +8,7 @@ import { ref, computed, onMounted } from 'vue'
 import { NCard, NButton, NIcon, NAlert, NSpin, useMessage } from 'naive-ui'
 import { Copy, CheckCircle, XCircle, Clock, Key, Activity, Zap } from 'lucide-vue-next'
 import type { HealthStats } from '../api/types'
+import { getConfig } from '../api/config'
 
 const message = useMessage()
 
@@ -19,8 +20,8 @@ const error = ref<string | null>(null)
 /** Dynamic Base URL computed from current origin */
 const baseUrl = computed(() => `${window.location.origin}/v1`)
 
-/** OpenAI-compatible API Key (placeholder for local proxy) */
-const apiKey = 'sk-mxln-proxy-local'
+/** OpenAI-compatible API Key (from backend config) */
+const apiKey = ref('sk-mxln-proxy-local')
 
 /** Generate curl example with current base URL */
 const curlExample = computed(() => `curl -X POST ${baseUrl.value}/chat/completions \\
@@ -83,7 +84,20 @@ function formatUptime(seconds: number): string {
   return `${hours}h ${mins}m`
 }
 
-onMounted(loadHealth)
+onMounted(async () => {
+  // Load health status
+  loadHealth()
+  
+  // Fetch actual proxy key from config
+  try {
+    const configRes = await getConfig()
+    if (configRes.data?.security?.proxy_key) {
+      apiKey.value = configRes.data.security.proxy_key
+    }
+  } catch (e) {
+    console.error('Failed to load proxy key:', e)
+  }
+})
 </script>
 
 <template>
@@ -93,7 +107,7 @@ onMounted(loadHealth)
       <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-2">Dashboard</h1>
-        <p class="text-claude-secondaryText dark:text-gray-500 text-sm">MxlnAPI Proxy Service - OpenAI Compatible Gateway</p>
+        <p class="text-claude-secondaryText dark:text-gray-500 text-sm">MuxueTools Proxy Service - OpenAI Compatible Gateway</p>
       </div>
 
       <!-- Loading State -->
@@ -297,7 +311,7 @@ onMounted(loadHealth)
 
         <!-- Version Info -->
         <div class="text-center text-xs text-claude-secondaryText dark:text-gray-600">
-          MxlnAPI v{{ health?.version ?? '1.0.0' }}
+          MuxueTools v{{ health?.version ?? '1.0.0' }}
         </div>
       </template>
     </div>
