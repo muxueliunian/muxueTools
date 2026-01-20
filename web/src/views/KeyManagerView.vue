@@ -9,6 +9,7 @@ import { h, ref, computed, onMounted, watch } from 'vue'
 import { NDataTable, NButton, NTag, NInput, NSpace, NModal, NFormItem, NCard, useMessage, useDialog, NIcon, NTooltip, NSelect, NSteps, NStep, NAlert } from 'naive-ui'
 import { useKeyStore } from '../stores/keyStore'
 import { useGlobalStore } from '../stores/global'
+import { useI18n } from 'vue-i18n'
 import { Search, Plus, Trash2, Copy, Play, ArrowLeft, ArrowRight, Check, Upload } from 'lucide-vue-next'
 import type { KeyInfo, KeyImportItem } from '../api/types'
 import { format } from 'date-fns'
@@ -18,6 +19,7 @@ const store = useKeyStore()
 const globalStore = useGlobalStore()
 const message = useMessage()
 const dialog = useDialog()
+const { t } = useI18n()
 
 // State
 const showAddModal = ref(false)
@@ -51,10 +53,10 @@ const newKeyForm = ref({
 })
 
 /** Provider options for selection */
-const providerOptions = [
-  { label: 'Google AI Studio', value: 'google_aistudio' },
-  { label: 'Gemini API', value: 'gemini_api' }
-]
+const providerOptions = computed(() => [
+  { label: t('keys.googleAistudio'), value: 'google_aistudio' },
+  { label: t('keys.geminiApi'), value: 'gemini_api' }
+])
 
 /** Model options computed from validation result */
 const modelOptions = computed(() => 
@@ -120,7 +122,7 @@ const columns = [
               row.enabled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-red-500'
             ]
           }),
-          h('span', { class: 'text-xs text-claude-secondaryText dark:text-gray-400 font-medium' }, row.enabled ? 'Active' : 'Disabled')
+          h('span', { class: 'text-xs text-claude-secondaryText dark:text-gray-400 font-medium' }, row.enabled ? t('common.active') : t('common.disabled'))
         ]
       )
     }
@@ -129,7 +131,7 @@ const columns = [
     title: 'NAME',
     key: 'name',
     render(row: KeyInfo) {
-      return h('span', { class: 'font-medium text-claude-text dark:text-gray-200' }, row.name || 'Untitled Key')
+      return h('span', { class: 'font-medium text-claude-text dark:text-gray-200' }, row.name || t('keys.untitledKey'))
     }
   },
   {
@@ -204,29 +206,29 @@ const columns = [
 // Handlers
 const handleCopy = async (text: string) => {
   await navigator.clipboard.writeText(text)
-  message.success('Copied to clipboard')
+  message.success(t('common.copiedToClipboard'))
 }
 
 const handleTestKey = async (id: string) => {
-  message.loading('Testing key connection...')
+  message.loading(t('keys.testingKey'))
   const result = await store.testKeyConnection(id)
   if (result && result.valid) {
-    message.success(`Connection successful (${result.latency_ms}ms)`)
+    message.success(t('keys.connectionSuccess', { latency: result.latency_ms }))
   } else {
-    message.error('Connection failed or key invalid')
+    message.error(t('keys.connectionFailed'))
   }
 }
 
 const handleDelete = async (id: string) => {
   dialog.warning({
-    title: 'Revoke Key',
-    content: 'Are you sure you want to revoke this API key? This action cannot be undone.',
-    positiveText: 'Revoke',
-    negativeText: 'Cancel',
+    title: t('keys.revokeKey'),
+    content: t('keys.revokeConfirm'),
+    positiveText: t('keys.revoke'),
+    negativeText: t('common.cancel'),
     onPositiveClick: async () => {
       const success = await store.removeKey(id)
-      if (success) message.success('Key revoked successfully')
-      else message.error('Failed to revoke key')
+      if (success) message.success(t('keys.keyRevokedSuccess'))
+      else message.error(t('keys.importFailed'))
     }
   })
 }
@@ -365,13 +367,13 @@ onMounted(() => {
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-2">API Keys</h1>
-          <p class="text-claude-secondaryText dark:text-gray-500 text-sm">Manage authentication keys for your AI models.</p>
+          <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-2">{{ $t('keys.title') }}</h1>
+          <p class="text-claude-secondaryText dark:text-gray-500 text-sm">{{ $t('keys.subtitle') }}</p>
         </div>
         <div class="flex items-center gap-3">
           <n-input 
             v-model:value="searchText" 
-            placeholder="Search keys..." 
+            :placeholder="$t('keys.searchPlaceholder')" 
             class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-300 w-64"
             round size="medium"
           >
@@ -383,7 +385,7 @@ onMounted(() => {
             icon-placement="left"
           >
             <template #icon><n-icon :component="Plus" /></template>
-            Create Key
+            {{ $t('keys.createKey') }}
           </n-button>
           <n-tooltip trigger="hover">
             <template #trigger>
@@ -395,7 +397,7 @@ onMounted(() => {
                 <template #icon><n-icon :component="Upload" /></template>
               </n-button>
             </template>
-            Import Keys
+            {{ $t('keys.importKeys') }}
           </n-tooltip>
         </div>
       </div>
@@ -420,35 +422,35 @@ onMounted(() => {
       <div :class="{ 'dark': globalStore.isDark }">
         <n-card
           class="!bg-white dark:!bg-[#212124] !text-claude-text dark:!text-gray-200 !border-claude-border dark:!border-[#2A2A2E] w-[680px] shadow-2xl"
-          title="Add New API Key"
+          :title="$t('keys.addNewKey')"
           :header-style="globalStore.isDark ? { color: 'white', borderBottom: '1px solid #2A2A2E' } : { color: '#1F1E1D', borderBottom: '1px solid #E1DFDD' }"
           size="huge"
           aria-modal="true"
         >
           <!-- Steps Indicator -->
           <n-steps :current="currentStep" size="small" class="mb-6">
-            <n-step title="Provider & Key" />
-            <n-step title="Select Model" />
-            <n-step title="Details" />
-            <n-step title="Confirm" />
+            <n-step :title="$t('keys.wizardStep1')" />
+            <n-step :title="$t('keys.wizardStep2')" />
+            <n-step :title="$t('keys.wizardStep3')" />
+            <n-step :title="$t('keys.wizardStep4')" />
           </n-steps>
 
           <!-- Step 1: Provider & Key Input -->
           <div v-show="currentStep === 1" class="space-y-4">
-            <n-form-item label="Provider" label-placement="top">
+            <n-form-item :label="$t('keys.provider')" label-placement="top">
               <n-select 
                 v-model:value="newKeyForm.provider" 
                 :options="providerOptions" 
-                placeholder="Select Provider"
+                :placeholder="$t('keys.selectProvider')"
                 class="!bg-gray-50 dark:!bg-[#191919]"
               />
             </n-form-item>
-            <n-form-item label="API Key" label-placement="top">
+            <n-form-item :label="$t('dashboard.apiKey')" label-placement="top">
               <n-input 
                 v-model:value="newKeyForm.key" 
                 type="password" 
                 show-password-on="click"
-                placeholder="Enter your API Key (e.g., AIzaSy...)" 
+                :placeholder="$t('keys.enterApiKey')" 
                 class="!bg-gray-50 dark:!bg-[#191919] !border-gray-200 dark:!border-[#2A2A2E] !text-gray-900 dark:!text-white"
               />
             </n-form-item>
@@ -460,42 +462,42 @@ onMounted(() => {
               class="!bg-[#D97757] !text-white !border-none hover:!bg-[#E6886A] w-full"
             >
               <template #icon v-if="!validating"><n-icon :component="Check" /></template>
-              {{ validating ? 'Validating...' : 'Validate & Fetch Models' }}
+              {{ validating ? $t('keys.validating') : $t('keys.validateAndFetch') }}
             </n-button>
           </div>
 
           <!-- Step 2: Model Selection -->
           <div v-show="currentStep === 2" class="space-y-4">
             <n-alert type="success" class="mb-4">
-              Key validated successfully! Latency: {{ validateResult?.latency_ms }}ms
+              {{ $t('keys.keyValidatedSuccess', { latency: validateResult?.latency_ms }) }}
             </n-alert>
-            <n-form-item label="Default Model" label-placement="top">
+            <n-form-item :label="$t('keys.defaultModel')" label-placement="top">
               <n-select 
                 v-model:value="newKeyForm.defaultModel" 
                 :options="modelOptions" 
-                placeholder="Select a default model"
+                :placeholder="$t('keys.selectDefaultModel')"
                 filterable
                 class="!bg-gray-50 dark:!bg-[#191919]"
               />
             </n-form-item>
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Found {{ modelOptions.length }} available models. You can skip model selection if preferred.
+              {{ $t('keys.foundModels', { count: modelOptions.length }) }}
             </p>
           </div>
 
           <!-- Step 3: Key Details -->
           <div v-show="currentStep === 3" class="space-y-4">
-            <n-form-item label="Key Name (Optional)" label-placement="top">
+            <n-form-item :label="$t('keys.keyNameOptional')" label-placement="top">
               <n-input 
                 v-model:value="newKeyForm.name" 
-                placeholder="e.g., Production Key, Dev Team Key"
+                :placeholder="$t('keys.keyNamePlaceholder')"
                 class="!bg-gray-50 dark:!bg-[#191919] !border-gray-200 dark:!border-[#2A2A2E] !text-gray-900 dark:!text-white"
               />
             </n-form-item>
-            <n-form-item label="Tags (Optional)" label-placement="top">
+            <n-form-item :label="$t('keys.tagsOptional')" label-placement="top">
               <n-input 
                 v-model:value="newKeyForm.tags" 
-                placeholder="production, high-priority (comma separated)"
+                :placeholder="$t('keys.tagsPlaceholder')"
                 class="!bg-gray-50 dark:!bg-[#191919] !border-gray-200 dark:!border-[#2A2A2E] !text-gray-900 dark:!text-white"
               />
             </n-form-item>
@@ -505,24 +507,24 @@ onMounted(() => {
           <div v-show="currentStep === 4" class="space-y-4">
             <div class="bg-gray-50 dark:bg-[#191919] rounded-lg p-4 space-y-3">
               <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Provider</span>
+                <span class="text-gray-500 dark:text-gray-400">{{ $t('keys.provider') }}</span>
                 <span class="font-medium text-gray-900 dark:text-white">{{ providerOptions.find(p => p.value === newKeyForm.provider)?.label }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">API Key</span>
+                <span class="text-gray-500 dark:text-gray-400">{{ $t('dashboard.apiKey') }}</span>
                 <span class="font-mono text-xs text-gray-900 dark:text-white">{{ newKeyForm.key.slice(0, 10) }}...{{ newKeyForm.key.slice(-4) }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Default Model</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ newKeyForm.defaultModel || 'Not selected' }}</span>
+                <span class="text-gray-500 dark:text-gray-400">{{ $t('keys.defaultModel') }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ newKeyForm.defaultModel || $t('keys.notSelected') }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Name</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ newKeyForm.name || 'Untitled' }}</span>
+                <span class="text-gray-500 dark:text-gray-400">{{ $t('keys.name') }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ newKeyForm.name || $t('keys.untitled') }}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Tags</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ newKeyForm.tags || 'None' }}</span>
+                <span class="text-gray-500 dark:text-gray-400">{{ $t('keys.tags') }}</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ newKeyForm.tags || $t('keys.none') }}</span>
               </div>
             </div>
           </div>
@@ -537,11 +539,11 @@ onMounted(() => {
                   text
                 >
                   <template #icon><n-icon :component="ArrowLeft" /></template>
-                  Back
+                  {{ $t('common.back') }}
                 </n-button>
               </div>
               <div class="flex gap-3">
-                <n-button @click="showAddModal = false" class="!text-gray-500 dark:!text-gray-400 hover:!text-gray-900 dark:hover:!text-white" text>Cancel</n-button>
+                <n-button @click="showAddModal = false" class="!text-gray-500 dark:!text-gray-400 hover:!text-gray-900 dark:hover:!text-white" text>{{ $t('common.cancel') }}</n-button>
                 
                 <!-- Next button (Steps 2-3) -->
                 <n-button 
@@ -549,7 +551,7 @@ onMounted(() => {
                   @click="nextStep"
                   class="!bg-[#D97757] !text-white !border-none hover:!bg-[#E6886A]"
                 >
-                  Next
+                  {{ $t('common.next') }}
                   <template #icon><n-icon :component="ArrowRight" /></template>
                 </n-button>
                 
@@ -561,7 +563,7 @@ onMounted(() => {
                   class="!bg-[#D97757] !text-white !border-none hover:!bg-[#E6886A]"
                 >
                   <template #icon v-if="!creating"><n-icon :component="Check" /></template>
-                  Create Key
+                  {{ $t('keys.createKey') }}
                 </n-button>
               </div>
             </div>
@@ -575,20 +577,20 @@ onMounted(() => {
       <div :class="{ 'dark': globalStore.isDark }">
         <n-card
           class="!bg-white dark:!bg-[#212124] !text-claude-text dark:!text-gray-200 !border-claude-border dark:!border-[#2A2A2E] w-[600px] shadow-2xl"
-          title="Import Keys"
+          :title="$t('keys.importKeys')"
           :header-style="globalStore.isDark ? { color: 'white', borderBottom: '1px solid #2A2A2E' } : { color: '#1F1E1D', borderBottom: '1px solid #E1DFDD' }"
           size="huge"
           aria-modal="true"
         >
           <div class="space-y-4">
             <n-alert type="info" :bordered="false" class="mb-4">
-              Paste keys line by line, or provide a JSON array.
+              {{ $t('keys.importHint') }}
             </n-alert>
-            <n-form-item label="Keys" label-placement="top">
+            <n-form-item :label="$t('keys.keysLabel')" label-placement="top">
               <n-input
                 v-model:value="importText"
                 type="textarea"
-                placeholder="AIzaSyABC123...&#10;AIzaSyDEF456...&#10;&#10;OR JSON:&#10;[&#10;  { &quot;key&quot;: &quot;AIzaSyABC123...&quot; },&#10;  { &quot;key&quot;: &quot;AIzaSyDEF456...&quot;, &quot;name&quot;: &quot;Production Key&quot; },&#10;  { &quot;key&quot;: &quot;AIzaSyGHI789...&quot;, &quot;name&quot;: &quot;Dev Key&quot;, &quot;tags&quot;: [&quot;dev&quot;] }&#10;]"
+                :placeholder="$t('keys.importPlaceholder')"
                 :rows="10"
                 class="!bg-gray-50 dark:!bg-[#191919] !border-gray-200 dark:!border-[#2A2A2E] !text-gray-900 dark:!text-white font-mono text-xs"
               />
@@ -597,14 +599,14 @@ onMounted(() => {
 
           <template #footer>
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-[#2A2A2E]">
-              <n-button @click="showImportModal = false" class="!text-gray-500 dark:!text-gray-400 hover:!text-gray-900 dark:hover:!text-white" text>Cancel</n-button>
+              <n-button @click="showImportModal = false" class="!text-gray-500 dark:!text-gray-400 hover:!text-gray-900 dark:hover:!text-white" text>{{ $t('common.cancel') }}</n-button>
               <n-button 
                 @click="handleImport"
                 :loading="importing"
                 class="!bg-[#D97757] !text-white !border-none hover:!bg-[#E6886A]"
               >
                 <template #icon v-if="!importing"><n-icon :component="Upload" /></template>
-                Import Keys
+                {{ $t('keys.importKeys') }}
               </n-button>
             </div>
           </template>

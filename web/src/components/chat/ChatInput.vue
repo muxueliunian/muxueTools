@@ -10,6 +10,7 @@ import { NInput, NButton, NIcon } from 'naive-ui'
 import { ArrowUp, StopCircle, ImageOutline, CloseCircle } from '@vicons/ionicons5'
 import { useChatStore } from '@/stores/chatStore'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
     /** 是否正在生成 */
@@ -24,12 +25,16 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    placeholder: '有什么可以帮到你的？',
+    placeholder: '',
 })
 
 const emit = defineEmits<Emits>()
 const chatStore = useChatStore()
 const message = useMessage()
+const { t } = useI18n()
+
+// 计算 placeholder，使用国际化
+const placeholder = computed(() => props.placeholder || t('chat.placeholder'))
 
 /** 输入内容 */
 const inputValue = ref('')
@@ -217,7 +222,7 @@ function removeMedia(index: number): void {
                         v-if="media.type === 'video'"
                         class="absolute bottom-1 left-1 text-xs bg-black/60 text-white px-1 rounded"
                     >
-                        视频
+                        {{ $t('chat.video') }}
                     </span>
                     <!-- 删除按钮 -->
                     <button 

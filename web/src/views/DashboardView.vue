@@ -7,10 +7,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { NCard, NButton, NIcon, NAlert, NSpin, useMessage } from 'naive-ui'
 import { Copy, CheckCircle, XCircle, Clock, Key, Activity, Zap } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import type { HealthStats } from '../api/types'
 import { getConfig } from '../api/config'
 
 const message = useMessage()
+const { t } = useI18n()
 
 // State
 const health = ref<HealthStats | null>(null)
@@ -36,7 +38,7 @@ const pythonExample = computed(() => `from openai import OpenAI
 
 client = OpenAI(
     base_url="${baseUrl.value}",
-    api_key="not-needed"  # 本地反代无需 Key
+    api_key="not-needed"  ${t('dashboard.pythonComment')}
 )
 
 response = client.chat.completions.create(
@@ -106,8 +108,8 @@ onMounted(async () => {
       
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-2">Dashboard</h1>
-        <p class="text-claude-secondaryText dark:text-gray-500 text-sm">MuxueTools Proxy Service - OpenAI Compatible Gateway</p>
+        <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-2">{{ $t('dashboard.title') }}</h1>
+        <p class="text-claude-secondaryText dark:text-gray-500 text-sm">{{ $t('dashboard.subtitle') }}</p>
       </div>
 
       <!-- Loading State -->
@@ -119,9 +121,9 @@ onMounted(async () => {
       <div v-else-if="error" class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-4 mb-6">
         <div class="flex items-center justify-between">
           <div class="text-red-700 dark:text-red-300">
-            <strong>Connection Error:</strong> {{ error }}
+            <strong>{{ $t('dashboard.connectionError') }}:</strong> {{ error }}
           </div>
-          <n-button size="small" @click="loadHealth">Retry</n-button>
+          <n-button size="small" @click="loadHealth">{{ $t('common.retry') }}</n-button>
         </div>
       </div>
 
@@ -134,7 +136,7 @@ onMounted(async () => {
           <template #header>
             <div class="flex items-center gap-2 text-claude-text dark:text-white">
               <n-icon :component="Zap" class="text-[#D97757]" />
-              <span class="font-medium">API Endpoint</span>
+              <span class="font-medium">{{ $t('dashboard.apiEndpoint') }}</span>
             </div>
           </template>
           
@@ -142,7 +144,7 @@ onMounted(async () => {
             <!-- Base URL -->
             <div class="flex items-center gap-3 bg-gray-50 dark:bg-[#191919] rounded-lg p-4">
               <div class="flex-1">
-                <div class="text-xs text-claude-secondaryText dark:text-gray-500 mb-1">Base URL</div>
+                <div class="text-xs text-claude-secondaryText dark:text-gray-500 mb-1">{{ $t('dashboard.baseUrl') }}</div>
                 <code class="text-sm font-mono text-claude-text dark:text-white">{{ baseUrl }}</code>
               </div>
               <n-button 
@@ -158,7 +160,7 @@ onMounted(async () => {
             <!-- API Key -->
             <div class="flex items-center gap-3 bg-gray-50 dark:bg-[#191919] rounded-lg p-4">
               <div class="flex-1">
-                <div class="text-xs text-claude-secondaryText dark:text-gray-500 mb-1">API Key</div>
+                <div class="text-xs text-claude-secondaryText dark:text-gray-500 mb-1">{{ $t('dashboard.apiKey') }}</div>
                 <code class="text-sm font-mono text-claude-text dark:text-white">{{ apiKey }}</code>
               </div>
               <n-button 
@@ -181,14 +183,14 @@ onMounted(async () => {
                     : 'bg-yellow-500'
                 ]" />
                 <span class="text-sm text-claude-secondaryText dark:text-gray-400">
-                  {{ health?.status === 'ok' ? 'Running' : 'Degraded' }}
+                  {{ health?.status === 'ok' ? $t('dashboard.running') : $t('dashboard.degraded') }}
                 </span>
               </div>
               <div class="text-sm text-claude-secondaryText dark:text-gray-500">
-                {{ health?.keys.active }} of {{ health?.keys.total }} keys active
+                {{ health?.keys.active }} / {{ health?.keys.total }} {{ $t('common.active') }}
               </div>
               <div class="text-sm text-claude-secondaryText dark:text-gray-500">
-                Uptime: {{ health?.uptime ? formatUptime(health.uptime) : '-' }}
+                {{ $t('dashboard.uptime') }}: {{ health?.uptime ? formatUptime(health.uptime) : '-' }}
               </div>
             </div>
           </div>
@@ -202,7 +204,7 @@ onMounted(async () => {
           <template #header>
             <div class="flex items-center gap-2 text-claude-text dark:text-white">
               <n-icon :component="Activity" class="text-[#D97757]" />
-              <span class="font-medium">Quick Start</span>
+              <span class="font-medium">{{ $t('dashboard.quickStart') }}</span>
             </div>
           </template>
 
@@ -248,7 +250,7 @@ onMounted(async () => {
             <!-- Tip -->
             <n-alert type="info" :show-icon="false" class="!bg-blue-50 dark:!bg-blue-950/30 !border-blue-200 dark:!border-blue-900">
               <div class="text-sm text-blue-700 dark:text-blue-300">
-                💡 <strong>Tip:</strong> 无需 API Key！本地反代已配置密钥池，可直接使用。
+                {{ $t('dashboard.tip') }} {{ $t('dashboard.noApiKeyNeeded') }}
               </div>
             </n-alert>
           </div>
@@ -262,7 +264,7 @@ onMounted(async () => {
               <div class="w-10 h-10 rounded-lg bg-[#D97757]/10 flex items-center justify-center">
                 <n-icon :component="Key" class="text-[#D97757]" size="20" />
               </div>
-              <span class="text-sm text-claude-secondaryText dark:text-gray-500">Total Keys</span>
+              <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('dashboard.totalKeys') }}</span>
             </div>
             <div class="text-3xl font-light text-claude-text dark:text-white">
               {{ health?.keys.total ?? '-' }}
@@ -275,7 +277,7 @@ onMounted(async () => {
               <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <n-icon :component="CheckCircle" class="text-emerald-500" size="20" />
               </div>
-              <span class="text-sm text-claude-secondaryText dark:text-gray-500">Active</span>
+              <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('dashboard.activeKeys') }}</span>
             </div>
             <div class="text-3xl font-light text-emerald-500">
               {{ health?.keys.active ?? '-' }}
@@ -288,7 +290,7 @@ onMounted(async () => {
               <div class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
                 <n-icon :component="Clock" class="text-yellow-500" size="20" />
               </div>
-              <span class="text-sm text-claude-secondaryText dark:text-gray-500">Rate Limited</span>
+              <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('dashboard.rateLimited') }}</span>
             </div>
             <div class="text-3xl font-light text-yellow-500">
               {{ health?.keys.rate_limited ?? '-' }}
@@ -301,7 +303,7 @@ onMounted(async () => {
               <div class="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
                 <n-icon :component="XCircle" class="text-red-500" size="20" />
               </div>
-              <span class="text-sm text-claude-secondaryText dark:text-gray-500">Disabled</span>
+              <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('dashboard.disabledKeys') }}</span>
             </div>
             <div class="text-3xl font-light text-red-500">
               {{ health?.keys.disabled ?? '-' }}

@@ -7,6 +7,7 @@
 
 import { computed } from 'vue'
 import { Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import type { Session } from '@/api/types'
 
 interface Props {
@@ -26,6 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+const { t, locale } = useI18n()
 
 /**
  * 格式化相对时间
@@ -39,19 +41,25 @@ const relativeTime = computed(() => {
     const diffHours = Math.floor(diffMins / 60)
     const diffDays = Math.floor(diffHours / 24)
 
-    if (diffSecs < 60) return '刚刚'
-    if (diffMins < 60) return `${diffMins} 分钟前`
-    if (diffHours < 24) return `${diffHours} 小时前`
-    if (diffDays < 7) return `${diffDays} 天前`
+    if (diffSecs < 60) return t('chat.justNow')
+    if (diffMins < 60) return t('chat.minutesAgo', { n: diffMins })
+    if (diffHours < 24) return t('chat.hoursAgo', { n: diffHours })
+    if (diffDays < 7) return t('chat.daysAgo', { n: diffDays })
     
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+    // 根据当前语言格式化日期
+    const localeMap: Record<string, string> = {
+        'zh-CN': 'zh-CN',
+        'en-US': 'en-US',
+        'ja-JP': 'ja-JP'
+    }
+    return date.toLocaleDateString(localeMap[locale.value] || 'en-US', { month: 'short', day: 'numeric' })
 })
 
 /**
  * 截取后的标题
  */
 const truncatedTitle = computed(() => {
-    const title = props.session.title || 'New Chat'
+    const title = props.session.title || t('chat.newChatTitle')
     if (title.length <= 20) return title
     return title.substring(0, 20) + '...'
 })
@@ -105,7 +113,7 @@ function handleDelete(e: MouseEvent) {
             <button
                 class="opacity-0 group-hover:opacity-100 p-1 rounded transition-all hover:bg-red-100 dark:hover:bg-red-900/30"
                 @click="handleDelete"
-                title="删除会话"
+                :title="$t('chat.deleteSession')"
             >
                 <Trash2 class="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors" />
             </button>

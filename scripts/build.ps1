@@ -12,8 +12,19 @@ $ErrorActionPreference = "Stop"
 $BinDir = Join-Path $PSScriptRoot "..\bin"
 $ProjectRoot = Join-Path $PSScriptRoot ".."
 
-# Version info (can be overridden by CI)
-$Version = if ($env:VERSION) { $env:VERSION } else { "dev" }
+# Version info (can be overridden by CI, otherwise use git describe)
+$Version = if ($env:VERSION) { 
+    $env:VERSION 
+}
+else { 
+    try { 
+        $gitVersion = git describe --tags --abbrev=0 2>$null
+        if ($gitVersion -match '^v(.+)$') { $Matches[1] } else { $gitVersion }
+    }
+    catch { 
+        "dev" 
+    }
+}
 $BuildTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 $GitCommit = try { git rev-parse --short HEAD 2>$null } catch { "unknown" }
 

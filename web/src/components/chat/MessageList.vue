@@ -66,7 +66,7 @@ onMounted(() => {
                      <img src="/logo.png" class="w-10 h-10" />
                 </div>
                 <h2 class="text-3xl font-serif font-medium text-claude-text dark:text-gray-200 tracking-tight">
-                    Back at it, muxueliunian
+                    {{ $t('chat.welcomeBack', { name: 'muxueliunian' }) }}
                 </h2>
             </div>
         </div>

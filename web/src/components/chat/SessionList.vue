@@ -55,7 +55,7 @@ function cancelDelete() {
     <div class="flex-1 overflow-y-auto session-list-scroll">
         <!-- 加载状态 -->
         <div v-if="sessionStore.isLoading" class="px-3 py-4 text-center">
-            <span class="text-sm text-claude-secondaryText dark:text-gray-500">加载中...</span>
+            <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('chat.loadingSessions') }}</span>
         </div>
 
         <!-- 空状态 -->
@@ -64,7 +64,7 @@ function cancelDelete() {
             class="px-3 py-4 text-center"
         >
             <span class="text-sm text-claude-secondaryText dark:text-gray-500">
-                暂无会话
+                {{ $t('chat.noSessions') }}
             </span>
         </div>
 
@@ -92,10 +92,10 @@ function cancelDelete() {
         style="width: 320px"
     >
         <template #header>
-            <span class="text-base font-medium">Delete Chat</span>
+            <span class="text-base font-medium">{{ $t('chat.deleteChat') }}</span>
         </template>
         <p class="text-sm text-claude-secondaryText dark:text-gray-400 mb-4">
-            Are you sure you want to delete this chat? This action cannot be undone.
+            {{ $t('chat.deleteChatConfirm') }}
         </p>
         <div class="flex gap-2 justify-end">
             <n-button 
@@ -104,7 +104,7 @@ function cancelDelete() {
                 quaternary
                 class="!text-claude-secondaryText dark:!text-gray-400"
             >
-                Cancel
+                {{ $t('common.cancel') }}
             </n-button>
             <n-button 
                 @click="confirmDelete"
@@ -112,7 +112,7 @@ function cancelDelete() {
                 type="error"
                 class="!bg-red-500 hover:!bg-red-600 !border-0"
             >
-                Delete
+                {{ $t('common.delete') }}
             </n-button>
         </div>
     </n-modal>

@@ -8,6 +8,7 @@
 
 import { watch } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import { useChatStore } from '@/stores/chatStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import MessageList from '@/components/chat/MessageList.vue'
@@ -17,6 +18,7 @@ import ModelSelector from '@/components/chat/ModelSelector.vue'
 const chatStore = useChatStore()
 const sessionStore = useSessionStore()
 const message = useMessage()
+const { t } = useI18n()
 
 /**
  * 处理发送消息 - 传递 sessionStore 以持久化消息
@@ -30,7 +32,7 @@ async function handleSend(content: string): Promise<void> {
  */
 function handleStop(): void {
     chatStore.stopGeneration()
-    message.info('已停止生成')
+    message.info(t('chat.stopGeneration'))
 }
 
 // 监听错误并显示 Toast
@@ -63,7 +65,7 @@ watch(
                 <div class="flex items-center gap-4 mb-3">
                     <ModelSelector />
                     <span class="text-xs text-claude-secondaryText dark:text-gray-500">
-                        按 Enter 发送，Shift + Enter 换行
+                        {{ $t('chat.sendHint') }}
                     </span>
                 </div>
                 

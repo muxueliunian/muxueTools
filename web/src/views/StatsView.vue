@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue';
 import { useStatsStore } from '../stores/statsStore';
 import { NGrid, NGridItem, NSelect, NIcon, NSpin, NEmpty } from 'naive-ui';
 import { Activity, PieChart, BarChart3 } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -29,13 +30,14 @@ use([
 
 // Store
 const statsStore = useStatsStore();
+const { t } = useI18n();
 
-// Time range options
-const rangeOptions = [
-    { label: 'Last 24 Hours', value: '24h' },
-    { label: 'Last 7 Days', value: '7d' },
-    { label: 'Last 30 Days', value: '30d' }
-];
+// Time range options (computed for i18n)
+const rangeOptions = computed(() => [
+    { label: t('stats.last24Hours'), value: '24h' },
+    { label: t('stats.last7Days'), value: '7d' },
+    { label: t('stats.last30Days'), value: '30d' }
+]);
 
 // Computed Summary Data (from trend data)
 const summary = computed(() => {
@@ -192,8 +194,8 @@ onMounted(() => {
             <!-- Header -->
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-light tracking-tight mb-2">Statistics</h1>
-                    <p class="text-claude-secondaryText dark:text-gray-500 text-sm">Monitor API usage, trends, and model distribution.</p>
+                    <h1 class="text-3xl font-light tracking-tight mb-2">{{ $t('stats.title') }}</h1>
+                    <p class="text-claude-secondaryText dark:text-gray-500 text-sm">{{ $t('stats.subtitle') }}</p>
                 </div>
                 
                 <!-- Time Range Selector -->
@@ -219,7 +221,7 @@ onMounted(() => {
                         <div class="bg-white dark:bg-[#212124] border border-claude-border dark:border-[#2A2A2E] rounded-xl p-6 h-full">
                             <div class="flex items-center gap-3 mb-2">
                                 <n-icon :component="Activity" class="text-[#D97757]" size="20" />
-                                <span class="text-sm text-claude-secondaryText dark:text-gray-500">Total Requests</span>
+                                <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('stats.totalRequests') }}</span>
                             </div>
                             <div class="text-3xl font-light">{{ summary.requests.toLocaleString() }}</div>
                         </div>
@@ -228,7 +230,7 @@ onMounted(() => {
                         <div class="bg-white dark:bg-[#212124] border border-claude-border dark:border-[#2A2A2E] rounded-xl p-6 h-full">
                             <div class="flex items-center gap-3 mb-2">
                                 <n-icon :component="BarChart3" class="text-emerald-500" size="20" />
-                                <span class="text-sm text-claude-secondaryText dark:text-gray-500">Total Tokens</span>
+                                <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('stats.totalTokens') }}</span>
                             </div>
                             <div class="text-3xl font-light">{{ summary.tokens.toLocaleString() }}</div>
                         </div>
@@ -237,7 +239,7 @@ onMounted(() => {
                         <div class="bg-white dark:bg-[#212124] border border-claude-border dark:border-[#2A2A2E] rounded-xl p-6 h-full">
                             <div class="flex items-center gap-3 mb-2">
                                 <n-icon :component="PieChart" class="text-red-500" size="20" />
-                                <span class="text-sm text-claude-secondaryText dark:text-gray-500">Error Rate</span>
+                                <span class="text-sm text-claude-secondaryText dark:text-gray-500">{{ $t('stats.errorRate') }}</span>
                             </div>
                             <div class="text-3xl font-light">{{ summary.errorRate }}</div>
                         </div>
@@ -248,7 +250,7 @@ onMounted(() => {
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Trend Chart -->
                     <div class="lg:col-span-2 bg-white dark:bg-[#212124] border border-claude-border dark:border-[#2A2A2E] rounded-xl p-6">
-                         <h3 class="text-lg font-medium mb-6">Request Trend</h3>
+                         <h3 class="text-lg font-medium mb-6">{{ $t('stats.requestTrend') }}</h3>
                          <div class="h-[350px]">
                              <v-chart class="chart" :option="trendOption" :autoresize="true" />
                          </div>
@@ -256,11 +258,11 @@ onMounted(() => {
 
                     <!-- Model Distribution -->
                     <div class="bg-white dark:bg-[#212124] border border-claude-border dark:border-[#2A2A2E] rounded-xl p-6">
-                        <h3 class="text-lg font-medium mb-6">Model Distribution</h3>
+                        <h3 class="text-lg font-medium mb-6">{{ $t('stats.modelDistribution') }}</h3>
                         <div class="h-[350px]">
                              <v-chart v-if="statsStore.modelUsage.length" class="chart" :option="modelOption" :autoresize="true" />
                              <div v-else class="h-full flex items-center justify-center">
-                                 <n-empty description="No model usage data" />
+                                 <n-empty :description="$t('stats.noModelUsageData')" />
                              </div>
                         </div>
                     </div>

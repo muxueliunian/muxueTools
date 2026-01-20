@@ -105,6 +105,10 @@ Agent 任务 Prompts 位于 [prompts/](./prompts/) 目录，用于指导 AI Agen
 - [TASK_DESKTOP_APP.md](./prompts/TASK_DESKTOP_APP.md) - 桌面应用开发 ✅
 - [TASK_WINDOW_CUSTOMIZATION.md](./prompts/TASK_WINDOW_CUSTOMIZATION.md) - 窗口自定义 ✅
 
+### 待开发任务
+- [TASK_I18N.md](./prompts/TASK_I18N.md) - 国际化 (中/英/日) ✅
+- [TASK_ANDROID_APK.md](./prompts/TASK_ANDROID_APK.md) - Android APK 适配 (Android 12+) ⏳
+
 ---
 
 ## 📖 参考文档

@@ -6,7 +6,8 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { streamChatCompletion, fetchAvailableModels } from '@/api/chat'
+import { streamChatCompletion, chatCompletion, fetchAvailableModels } from '@/api/chat'
+import { getConfig } from '@/api/config'
 import type { ChatCompletionMessage, ChatCompletionMessageMultimodal, ContentPart, Message } from '@/api/types'
 
 /** localStorage 键名 */
@@ -81,6 +82,9 @@ export const useChatStore = defineStore('chat', () => {
     /** 待发送的媒体文件队列 */
     const pendingMedia = ref<MediaFile[]>([])
 
+    /** 是否启用流式输出 (从配置读取) */
+    const streamOutput = ref(true)
+
     // ==================== Model Actions ====================
 
     /**
@@ -115,6 +119,22 @@ export const useChatStore = defineStore('chat', () => {
             }
         } finally {
             isLoadingModels.value = false
+        }
+    }
+
+    /**
+     * 从后端配置加载流式输出设置
+     */
+    async function loadStreamSetting(): Promise<void> {
+        try {
+            const res = await getConfig()
+            if (res.success && res.data?.model_settings) {
+                streamOutput.value = res.data.model_settings.stream_output ?? true
+            }
+        } catch (err) {
+            console.error('加载流式输出设置失败:', err)
+            // 默认启用流式输出
+            streamOutput.value = true
         }
     }
 
@@ -313,17 +333,28 @@ export const useChatStore = defineStore('chat', () => {
                     } as ChatCompletionMessage
                 })
 
-            // 流式获取响应
-            for await (const chunk of streamChatCompletion(
-                apiMessages,
-                targetModel,
-                abortController.signal
-            )) {
-                // 通过索引访问并更新消息，确保 Vue 响应式更新
+            // 根据 streamOutput 设置选择流式或非流式请求
+            if (streamOutput.value) {
+                // 流式获取响应
+                for await (const chunk of streamChatCompletion(
+                    apiMessages,
+                    targetModel,
+                    abortController.signal
+                )) {
+                    // 通过索引访问并更新消息，确保 Vue 响应式更新
+                    const currentMessage = messages.value[assistantIndex]
+                    if (currentMessage) {
+                        currentMessage.content += chunk
+                        // 强制触发响应式更新
+                        messages.value = [...messages.value]
+                    }
+                }
+            } else {
+                // 非流式获取响应
+                const response = await chatCompletion(apiMessages as ChatCompletionMessage[], targetModel)
                 const currentMessage = messages.value[assistantIndex]
                 if (currentMessage) {
-                    currentMessage.content += chunk
-                    // 强制触发响应式更新
+                    currentMessage.content = response
                     messages.value = [...messages.value]
                 }
             }
@@ -399,6 +430,7 @@ export const useChatStore = defineStore('chat', () => {
         availableModels,
         isLoadingModels,
         pendingMedia,
+        streamOutput,
         // Actions
         sendMessage,
         stopGeneration,
@@ -407,6 +439,7 @@ export const useChatStore = defineStore('chat', () => {
         setModel,
         loadModels,
         restoreModelPreference,
+        loadStreamSetting,
         addPendingMedia,
         removePendingMedia,
         clearPendingMedia,

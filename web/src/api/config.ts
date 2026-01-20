@@ -9,6 +9,7 @@ export interface ModelSettingsConfig {
     top_k?: number | null;
     thinking_level?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
     media_resolution?: 'MEDIA_RESOLUTION_LOW' | 'MEDIA_RESOLUTION_MEDIUM' | 'MEDIA_RESOLUTION_HIGH' | null;
+    stream_output?: boolean;  // 是否启用流式输出，默认 true
 }
 
 export interface ConfigInfo {

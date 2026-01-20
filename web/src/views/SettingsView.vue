@@ -9,10 +9,12 @@ import { NCard, NForm, NFormItem, NSelect, NSwitch, NButton, NRadioGroup, NRadio
 import { getConfig, updateConfig, checkUpdate, regenerateProxyKey, clearAllSessions, resetStats, type ConfigInfo, type UpdateInfo, type ModelSettingsConfig } from '../api/config'
 import { Save, CheckCircle2, Eye, EyeOff, RefreshCw, Shield, Trash2, Cpu } from 'lucide-vue-next'
 import { useGlobalStore } from '@/stores/global'
+import { useI18n } from 'vue-i18n'
 
 const globalStore = useGlobalStore()
 
 const message = useMessage()
+const { t } = useI18n()
 const loading = ref(false)
 const checkingUpdate = ref(false)
 const regeneratingKey = ref(false)
@@ -47,41 +49,42 @@ const modelSettings = ref<ModelSettingsConfig>({
     top_p: null,
     top_k: null,
     thinking_level: null,
-    media_resolution: null
+    media_resolution: null,
+    stream_output: true  // 默认启用流式输出
 })
 
-const thinkingLevelOptions = [
-    { label: 'Disabled', value: '' },
-    { label: 'Low', value: 'LOW' },
-    { label: 'Medium', value: 'MEDIUM' },
-    { label: 'High', value: 'HIGH' }
-]
+const thinkingLevelOptions = computed(() => [
+    { label: t('settings.thinkingDisabled'), value: '' },
+    { label: t('settings.thinkingLow'), value: 'LOW' },
+    { label: t('settings.thinkingMedium'), value: 'MEDIUM' },
+    { label: t('settings.thinkingHigh'), value: 'HIGH' }
+])
 
-const mediaResolutionOptions = [
-    { label: 'Default', value: '' },
-    { label: 'Low (64 tokens)', value: 'MEDIA_RESOLUTION_LOW' },
-    { label: 'Medium (256 tokens)', value: 'MEDIA_RESOLUTION_MEDIUM' },
-    { label: 'High (scaling)', value: 'MEDIA_RESOLUTION_HIGH' }
-]
+const mediaResolutionOptions = computed(() => [
+    { label: t('settings.mediaDefault'), value: '' },
+    { label: t('settings.mediaLow'), value: 'MEDIA_RESOLUTION_LOW' },
+    { label: t('settings.mediaMedium'), value: 'MEDIA_RESOLUTION_MEDIUM' },
+    { label: t('settings.mediaHigh'), value: 'MEDIA_RESOLUTION_HIGH' }
+])
 
-const strategyOptions = [
-    { label: 'Round Robin (Sequential)', value: 'round_robin' },
-    { label: 'Random Selection', value: 'random' },
-    { label: 'Least Used First', value: 'least_used' },
-    { label: 'Weighted Random', value: 'weighted' }
-]
+const strategyOptions = computed(() => [
+    { label: t('settings.roundRobin'), value: 'round_robin' },
+    { label: t('settings.randomSelection'), value: 'random' },
+    { label: t('settings.leastUsedFirst'), value: 'least_used' },
+    { label: t('settings.weightedRandom'), value: 'weighted' }
+])
 
-const logLevelOptions = [
-    { label: 'Debug (Verbose)', value: 'debug' },
-    { label: 'Info (Standard)', value: 'info' },
-    { label: 'Warning', value: 'warn' },
-    { label: 'Error (Critical only)', value: 'error' }
-]
+const logLevelOptions = computed(() => [
+    { label: t('settings.debugVerbose'), value: 'debug' },
+    { label: t('settings.infoStandard'), value: 'info' },
+    { label: t('settings.warning'), value: 'warn' },
+    { label: t('settings.errorCritical'), value: 'error' }
+])
 
-const updateSourceOptions = [
-    { label: 'mxln Server (推荐)', value: 'mxln' },
-    { label: 'GitHub', value: 'github' }
-]
+const updateSourceOptions = computed(() => [
+    { label: t('settings.mxlnServer'), value: 'mxln' },
+    { label: t('settings.github'), value: 'github' }
+])
 
 // 更新源选择
 const updateSource = ref<'mxln' | 'github'>('mxln')
@@ -118,7 +121,8 @@ async function loadConfig() {
                     top_p: res.data.model_settings.top_p ?? null,
                     top_k: res.data.model_settings.top_k ?? null,
                     thinking_level: res.data.model_settings.thinking_level ?? null,
-                    media_resolution: res.data.model_settings.media_resolution ?? null
+                    media_resolution: res.data.model_settings.media_resolution ?? null,
+                    stream_output: res.data.model_settings.stream_output ?? true
                 }
             }
         }
@@ -177,7 +181,8 @@ async function handleSave() {
             top_p: modelSettings.value.top_p,
             top_k: modelSettings.value.top_k,
             thinking_level: modelSettings.value.thinking_level,
-            media_resolution: modelSettings.value.media_resolution
+            media_resolution: modelSettings.value.media_resolution,
+            stream_output: modelSettings.value.stream_output
         }
         
         const res = await updateConfig(configToSave as Partial<ConfigInfo>)
@@ -231,11 +236,11 @@ async function handleDeleteChats() {
     try {
         const res = await clearAllSessions()
         if (res.success) {
-            message.success(`Deleted ${res.data?.deleted || 0} sessions successfully`)
+            message.success(t('settings.deletedSessions', { count: res.data?.deleted || 0 }))
             showDeleteChatsModal.value = false
         }
     } catch (e) {
-        message.error('Failed to delete chat history')
+        message.error(t('settings.deleteChatDescription'))
     } finally {
         deletingChats.value = false
     }
@@ -246,11 +251,11 @@ async function handleResetStats() {
     try {
         const res = await resetStats()
         if (res.success) {
-            message.success(`Reset statistics for ${res.data?.keys_affected || 0} keys`)
+            message.success(t('settings.resetKeysAffected', { count: res.data?.keys_affected || 0 }))
             showDeleteStatsModal.value = false
         }
     } catch (e) {
-        message.error('Failed to reset statistics')
+        message.error(t('settings.resetStatsDescription'))
     } finally {
         deletingStats.value = false
     }
@@ -267,8 +272,8 @@ onMounted(() => {
             <!-- Header with inline tabs -->
             <div class="flex items-end justify-between border-b border-claude-border dark:border-[#2A2A2E] pb-4">
                 <div>
-                    <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-1">Settings</h1>
-                    <p class="text-claude-secondaryText dark:text-gray-500 text-sm">Configure system behavior and performance.</p>
+                    <h1 class="text-3xl font-light text-claude-text dark:text-white tracking-tight mb-1">{{ $t('settings.title') }}</h1>
+                    <p class="text-claude-secondaryText dark:text-gray-500 text-sm">{{ $t('settings.subtitle') }}</p>
                 </div>
                 <!-- Inline Tab Navigation -->
                 <div class="flex gap-1 bg-gray-100 dark:bg-[#191919] rounded-lg p-1">
@@ -280,7 +285,7 @@ onMounted(() => {
                                 ? 'bg-white dark:bg-[#2A2A2E] text-claude-text dark:text-white shadow-sm' 
                                 : 'text-claude-secondaryText dark:text-gray-500 hover:text-claude-text dark:hover:text-gray-300'
                         ]"
-                    >General</button>
+                    >{{ $t('settings.general') }}</button>
                     <button 
                         @click="activeTab = 'security'"
                         :class="[
@@ -291,7 +296,7 @@ onMounted(() => {
                         ]"
                     >
                         <Shield class="w-3.5 h-3.5" />
-                        Security
+                        {{ $t('settings.security') }}
                     </button>
                     <button 
                         @click="activeTab = 'advanced'"
@@ -301,7 +306,7 @@ onMounted(() => {
                                 ? 'bg-white dark:bg-[#2A2A2E] text-claude-text dark:text-white shadow-sm' 
                                 : 'text-claude-secondaryText dark:text-gray-500 hover:text-claude-text dark:hover:text-gray-300'
                         ]"
-                    >Advanced</button>
+                    >{{ $t('settings.advanced') }}</button>
                     <button 
                         @click="activeTab = 'model'"
                         :class="[
@@ -312,7 +317,7 @@ onMounted(() => {
                         ]"
                     >
                         <Cpu class="w-3.5 h-3.5" />
-                        Model
+                        {{ $t('settings.model') }}
                     </button>
                 </div>
             </div>
@@ -322,38 +327,38 @@ onMounted(() => {
                 <!-- General Tab -->
                 <template v-if="activeTab === 'general'">
                     <!-- Strategy Section -->
-                    <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Key Management">
+                    <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.keyManagement')">
                         <n-form label-placement="top" class="mt-2">
-                             <n-form-item label="Selection Strategy">
+                             <n-form-item :label="$t('settings.selectionStrategy')">
                                 <n-select v-model:value="config.pool.strategy" :options="strategyOptions" />
                                 <template #feedback>
-                                    <span class="text-xs text-claude-secondaryText dark:text-gray-500">Algorithm used to select the next available API key.</span>
+                                    <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.strategyDescription') }}</span>
                                 </template>
                             </n-form-item>
                         </n-form>
                         </n-card>
 
                          <!-- Logging Section -->
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Logging & Updates">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.loggingAndUpdates')">
                              <n-form label-placement="top" class="mt-2">
-                                <n-form-item label="Log Level">
+                                <n-form-item :label="$t('settings.logLevel')">
                                     <n-select v-model:value="config.logging.level" :options="logLevelOptions" class="anthropic-select" />
                                 </n-form-item>
                                 <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">Automatic Updates</div>
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">Check for new versions on startup.</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.automaticUpdates') }}</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.checkOnStartup') }}</div>
                                     </div>
                                     <div class="flex gap-4 items-center">
-                                        <n-button size="small" tertiary class="!text-gray-400 hover:!text-white" @click="handleCheckUpdate" :loading="checkingUpdate">Check Now</n-button>
+                                        <n-button size="small" tertiary class="!text-gray-400 hover:!text-white" @click="handleCheckUpdate" :loading="checkingUpdate">{{ $t('settings.checkNow') }}</n-button>
                                         <n-switch v-model:value="config.update.enabled" :rail-style="({ checked }) => ({ backgroundColor: checked ? '#D97757' : '#4B5563' })" />
                                     </div>
                                 </div>
                                 
                                 <!-- Update Source Selection -->
                                 <div class="mt-4 pt-4 border-t border-claude-border dark:border-[#2A2A2E]">
-                                    <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Update Source</div>
+                                    <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">{{ $t('settings.updateSource') }}</div>
                                     <n-radio-group v-model:value="updateSource" name="update-source" class="flex gap-4">
                                         <n-radio 
                                             v-for="opt in updateSourceOptions" 
@@ -365,7 +370,7 @@ onMounted(() => {
                                         </n-radio>
                                     </n-radio-group>
                                     <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">
-                                        {{ updateSource === 'mxln' ? '使用 mxln 服务器检查更新 (中国用户推荐)' : '使用 GitHub Releases 检查更新' }}
+                                        {{ updateSource === 'mxln' ? $t('settings.mxlnDescription') : $t('settings.githubDescription') }}
                                     </div>
                                 </div>
                             </n-form>
@@ -385,32 +390,32 @@ onMounted(() => {
 
                     <!-- Security Tab -->
                     <template v-if="activeTab === 'security'">
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Access Control">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.accessControl')">
                             <n-form label-placement="top" class="mt-2">
                                 <!-- IP Whitelist -->
                                 <div class="flex items-center justify-between mb-4">
                                     <div>
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">IP Whitelist</div>
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">Only allow requests from specific IP address.</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.ipWhitelist') }}</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.ipWhitelistDescription') }}</div>
                                     </div>
                                     <n-switch v-model:value="ipWhitelistEnabled" :rail-style="({ checked }) => ({ backgroundColor: checked ? '#D97757' : '#4B5563' })" />
                                 </div>
 
-                                <n-form-item label="Allowed IP Address" v-if="ipWhitelistEnabled">
+                                <n-form-item :label="$t('settings.allowedIpAddress')" v-if="ipWhitelistEnabled">
                                     <n-input 
                                         v-model:value="whitelistIP" 
                                         placeholder="e.g., 192.168.1.100"
                                         class="!bg-gray-50 dark:!bg-[#191919]"
                                     />
                                     <template #feedback>
-                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">Localhost (127.0.0.1) is always allowed to prevent lockout.</span>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.localhostAlwaysAllowed') }}</span>
                                     </template>
                                 </n-form-item>
 
                                 <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
 
                                 <!-- Proxy API Key -->
-                                <n-form-item label="Proxy API Key">
+                                <n-form-item :label="$t('settings.proxyApiKey')">
                                     <div class="flex gap-2 w-full">
                                         <div class="relative flex-1">
                                             <n-input 
@@ -435,11 +440,11 @@ onMounted(() => {
                                             <template #icon>
                                                 <RefreshCw class="w-4 h-4" />
                                             </template>
-                                            Regenerate
+                                            {{ $t('settings.regenerate') }}
                                         </n-button>
                                     </div>
                                     <template #feedback>
-                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">Used to authenticate requests to this proxy. Share with authorized users only.</span>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.proxyKeyDescription') }}</span>
                                     </template>
                                 </n-form-item>
                             </n-form>
@@ -449,11 +454,11 @@ onMounted(() => {
                     <!-- Advanced Tab -->
                     <template v-if="activeTab === 'advanced'">
                         <!-- Configuration Parameters -->
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Performance Tuning">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.performanceTuning')">
                             <n-form label-placement="top" class="mt-2">
                                 <div class="grid grid-cols-3 gap-4">
                                     <div class="space-y-1">
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">Cooldown Time</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.cooldownTime') }}</div>
                                         <n-input-number 
                                             v-model:value="config.pool.cooldown_seconds" 
                                             :min="60" 
@@ -461,23 +466,23 @@ onMounted(() => {
                                             class="!w-full"
                                         >
                                             <template #suffix>
-                                                <span class="text-xs text-gray-400">sec</span>
+                                                <span class="text-xs text-gray-400">{{ $t('settings.sec') }}</span>
                                             </template>
                                         </n-input-number>
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">Rate limit cooldown</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.cooldownDescription') }}</div>
                                     </div>
                                     <div class="space-y-1">
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">Max Retries</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.maxRetries') }}</div>
                                         <n-input-number 
                                             v-model:value="config.pool.max_retries" 
                                             :min="0" 
                                             :max="10"
                                             class="!w-full"
                                         />
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">Retry on failure</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.retryOnFailure') }}</div>
                                     </div>
                                     <div class="space-y-1">
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">Request Timeout</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.requestTimeout') }}</div>
                                         <n-input-number 
                                             v-model:value="config.advanced!.request_timeout" 
                                             :min="30" 
@@ -485,10 +490,10 @@ onMounted(() => {
                                             class="!w-full"
                                         >
                                             <template #suffix>
-                                                <span class="text-xs text-gray-400">sec</span>
+                                                <span class="text-xs text-gray-400">{{ $t('settings.sec') }}</span>
                                             </template>
                                         </n-input-number>
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">API request timeout</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.apiRequestTimeout') }}</div>
                                     </div>
                                 </div>
 
@@ -496,8 +501,8 @@ onMounted(() => {
 
                                 <div class="flex items-center justify-between">
                                     <div>
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">Debug Mode</div>
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">Enable verbose logging output.</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.debugMode') }}</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.verboseLogging') }}</div>
                                     </div>
                                     <n-switch 
                                         :value="config.logging.level === 'debug'"
@@ -509,27 +514,27 @@ onMounted(() => {
                         </n-card>
 
                         <!-- Data Management -->
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Data Management">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.dataManagement')">
                             <n-form label-placement="top" class="mt-2">
-                                <n-form-item label="Database Location">
+                                <n-form-item :label="$t('settings.databaseLocation')">
                                     <n-input 
                                         value="./data/muxueTools.db" 
                                         readonly
                                         class="!bg-gray-50 dark:!bg-[#191919]"
                                     />
                                     <template #feedback>
-                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">SQLite database file path (read-only)</span>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.sqlitePath') }}</span>
                                     </template>
                                 </n-form-item>
 
                                 <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
 
-                                <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-3">Danger Zone</div>
+                                <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-3">{{ $t('settings.dangerZone') }}</div>
                                 <div class="space-y-3">
                                     <div class="flex items-center justify-between p-3 border border-red-500/20 rounded bg-red-500/5">
                                         <div>
-                                            <div class="text-sm text-red-400">Delete Chat History</div>
-                                            <div class="text-xs text-gray-500">Remove all chat sessions and messages.</div>
+                                            <div class="text-sm text-red-400">{{ $t('settings.deleteChatHistory') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $t('settings.deleteChatDescription') }}</div>
                                         </div>
                                         <n-button 
                                             @click="showDeleteChatsModal = true"
@@ -540,13 +545,13 @@ onMounted(() => {
                                             <template #icon>
                                                 <Trash2 class="w-4 h-4" />
                                             </template>
-                                            Delete
+                                            {{ $t('common.delete') }}
                                         </n-button>
                                     </div>
                                     <div class="flex items-center justify-between p-3 border border-red-500/20 rounded bg-red-500/5">
                                         <div>
-                                            <div class="text-sm text-red-400">Reset Statistics</div>
-                                            <div class="text-xs text-gray-500">Clear all API key usage statistics.</div>
+                                            <div class="text-sm text-red-400">{{ $t('settings.resetStatistics') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $t('settings.resetStatsDescription') }}</div>
                                         </div>
                                         <n-button 
                                             @click="showDeleteStatsModal = true"
@@ -557,7 +562,7 @@ onMounted(() => {
                                             <template #icon>
                                                 <Trash2 class="w-4 h-4" />
                                             </template>
-                                            Reset
+                                            {{ $t('settings.reset') }}
                                         </n-button>
                                     </div>
                                 </div>
@@ -568,29 +573,29 @@ onMounted(() => {
                     <!-- Model Tab -->
                     <template v-if="activeTab === 'model'">
                         <!-- System Prompt -->
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="System Prompt">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.systemPrompt')">
                             <n-form label-placement="top" class="mt-2">
-                                <n-form-item label="Default System Prompt">
+                                <n-form-item :label="$t('settings.defaultSystemPrompt')">
                                     <n-input 
                                         v-model:value="modelSettings.system_prompt" 
                                         type="textarea"
                                         :autosize="{ minRows: 3, maxRows: 8 }"
-                                        placeholder="Enter a system prompt to be used for all requests..."
+                                        :placeholder="$t('settings.systemPromptPlaceholder')"
                                         class="!bg-gray-50 dark:!bg-[#191919]"
                                     />
                                     <template #feedback>
-                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">This prompt will be prepended to all chat requests.</span>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.systemPromptDescription') }}</span>
                                     </template>
                                 </n-form-item>
                             </n-form>
                         </n-card>
 
                         <!-- Generation Parameters -->
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Generation Parameters">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.generationParameters')">
                             <n-form label-placement="top" class="mt-2">
                                 <!-- Temperature -->
                                 <div class="mb-6">
-                                    <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Temperature</div>
+                                    <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">{{ $t('settings.temperature') }}</div>
                                     <div class="flex gap-4 items-center">
                                         <n-slider 
                                             :value="modelSettings.temperature ?? 1" 
@@ -611,7 +616,7 @@ onMounted(() => {
                                             class="!w-24"
                                         />
                                     </div>
-                                    <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">Controls randomness. Lower = more deterministic, Higher = more creative.</div>
+                                    <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">{{ $t('settings.temperatureDescription') }}</div>
                                 </div>
 
                                 <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
@@ -619,7 +624,7 @@ onMounted(() => {
                                 <div class="grid grid-cols-2 gap-6">
                                     <!-- Top-P -->
                                     <div>
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Top-P</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">{{ $t('settings.topP') }}</div>
                                         <n-input-number 
                                             v-model:value="modelSettings.top_p" 
                                             :min="0" 
@@ -629,12 +634,12 @@ onMounted(() => {
                                             placeholder="0.95"
                                             class="!w-full"
                                         />
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">Nucleus sampling threshold</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">{{ $t('settings.topPDescription') }}</div>
                                     </div>
 
                                     <!-- Top-K -->
                                     <div>
-                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">Top-K</div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200 mb-2">{{ $t('settings.topK') }}</div>
                                         <n-input-number 
                                             v-model:value="modelSettings.top_k" 
                                             :min="1" 
@@ -643,14 +648,14 @@ onMounted(() => {
                                             placeholder="40"
                                             class="!w-full"
                                         />
-                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">Top-K sampling</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500 mt-1">{{ $t('settings.topKDescription') }}</div>
                                     </div>
                                 </div>
 
                                 <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
 
                                 <!-- Max Output Tokens -->
-                                <n-form-item label="Max Output Tokens">
+                                <n-form-item :label="$t('settings.maxOutputTokens')">
                                     <n-input-number 
                                         v-model:value="modelSettings.max_output_tokens" 
                                         :min="1" 
@@ -660,39 +665,53 @@ onMounted(() => {
                                         class="!w-full"
                                     />
                                     <template #feedback>
-                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">Maximum number of tokens to generate.</span>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.maxOutputTokensDescription') }}</span>
                                     </template>
                                 </n-form-item>
                             </n-form>
                         </n-card>
 
                         <!-- Advanced Model Features -->
-                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" title="Advanced Features (Gemini 2.5+)">
+                        <n-card class="!bg-white dark:!bg-[#212124] !border-claude-border dark:!border-[#2A2A2E] !text-claude-text dark:!text-gray-200 shadow-sm transition-colors duration-200" :title="$t('settings.advancedFeatures')">
                             <n-form label-placement="top" class="mt-2">
                                 <div class="grid grid-cols-2 gap-6">
                                     <!-- Thinking Level -->
-                                    <n-form-item label="Thinking Level">
+                                    <n-form-item :label="$t('settings.thinkingLevel')">
                                         <n-select 
                                             v-model:value="modelSettings.thinking_level" 
                                             :options="thinkingLevelOptions" 
-                                            placeholder="Select thinking level"
+                                            :placeholder="$t('settings.selectThinkingLevel')"
                                         />
                                         <template #feedback>
-                                            <span class="text-xs text-claude-secondaryText dark:text-gray-500">Controls reasoning depth for supported models.</span>
+                                            <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.thinkingLevelDescription') }}</span>
                                         </template>
                                     </n-form-item>
 
                                     <!-- Media Resolution -->
-                                    <n-form-item label="Media Resolution">
+                                    <n-form-item :label="$t('settings.mediaResolution')">
                                         <n-select 
                                             v-model:value="modelSettings.media_resolution" 
                                             :options="mediaResolutionOptions" 
-                                            placeholder="Select resolution"
+                                            :placeholder="$t('settings.selectResolution')"
                                         />
                                         <template #feedback>
-                                            <span class="text-xs text-claude-secondaryText dark:text-gray-500">Image/video processing resolution.</span>
+                                            <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.mediaResolutionDescription') }}</span>
                                         </template>
                                     </n-form-item>
+                                </div>
+
+                                <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
+
+                                <!-- Stream Output Toggle -->
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-sm font-medium text-claude-text dark:text-gray-200">{{ $t('settings.streamOutput') }}</div>
+                                        <div class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.streamOutputDescription') }}</div>
+                                    </div>
+                                    <n-switch 
+                                        v-model:value="modelSettings.stream_output" 
+                                        :rail-style="({ checked }) => ({ backgroundColor: checked ? '#D97757' : '#4B5563' })" 
+                                    />
                                 </div>
                             </n-form>
                         </n-card>
@@ -707,7 +726,7 @@ onMounted(() => {
                             <template #icon>
                                 <Save class="w-4 h-4 mr-2" />
                             </template>
-                            Save Changes
+                            {{ $t('settings.saveChanges') }}
                         </n-button>
                     </div>
 
@@ -716,31 +735,31 @@ onMounted(() => {
     </div>
 
     <!-- Delete Chats Confirmation Modal -->
-    <n-modal v-model:show="showDeleteChatsModal" preset="dialog" type="warning" title="Delete All Chat History">
+    <n-modal v-model:show="showDeleteChatsModal" preset="dialog" type="warning" :title="$t('settings.deleteAllChatHistory')">
         <template #default>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-                This action will permanently delete all chat sessions and messages. This cannot be undone.
+                {{ $t('settings.deleteChatsWarning') }}
             </p>
         </template>
         <template #action>
             <div class="flex gap-2 justify-end">
-                <n-button @click="showDeleteChatsModal = false" size="small">Cancel</n-button>
-                <n-button @click="handleDeleteChats" :loading="deletingChats" type="error" size="small">Delete All</n-button>
+                <n-button @click="showDeleteChatsModal = false" size="small">{{ $t('common.cancel') }}</n-button>
+                <n-button @click="handleDeleteChats" :loading="deletingChats" type="error" size="small">{{ $t('settings.deleteAll') }}</n-button>
             </div>
         </template>
     </n-modal>
 
     <!-- Reset Stats Confirmation Modal -->
-    <n-modal v-model:show="showDeleteStatsModal" preset="dialog" type="warning" title="Reset All Statistics">
+    <n-modal v-model:show="showDeleteStatsModal" preset="dialog" type="warning" :title="$t('settings.resetAllStatistics')">
         <template #default>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-                This action will reset all API key usage statistics (request counts, token usage, etc.). This cannot be undone.
+                {{ $t('settings.resetStatsWarning') }}
             </p>
         </template>
         <template #action>
             <div class="flex gap-2 justify-end">
-                <n-button @click="showDeleteStatsModal = false" size="small">Cancel</n-button>
-                <n-button @click="handleResetStats" :loading="deletingStats" type="error" size="small">Reset All</n-button>
+                <n-button @click="showDeleteStatsModal = false" size="small">{{ $t('common.cancel') }}</n-button>
+                <n-button @click="handleResetStats" :loading="deletingStats" type="error" size="small">{{ $t('settings.resetAll') }}</n-button>
             </div>
         </template>
     </n-modal>

@@ -12,11 +12,12 @@
 | 1 | [API Keys 页面优化](#任务-1-api-keys-页面优化) | KeyManagerView | P0 | ✅ 已完成 |
 | 2 | [Chat 界面改进](#任务-2-chat-界面改进) | ChatView | P0 | ✅ 已完成 |
 | 3 | [Statistics 页面实现](#任务-3-statistics-页面实现) | StatsView | P1 | ✅ 已完成 |
-| 4 | [Settings 页面完善](#任务-4-settings-页面完善) | SettingsView | P1 | ⏳ 待开发 |
-| 5 | [Model Settings 页面](#任务-5-model-settings-页面新增) | ModelSettingsView | P2 | ⏳ 待开发 |
-| 6 | [国际化 (i18n)](#任务-6-国际化-i18n) | 全局 | P1 | ⏳ 待开发 |
+| 4 | [Settings 页面完善](#任务-4-settings-页面完善) | SettingsView | P1 | ✅ 已完成 |
+| 5 | [Model Settings 页面](#任务-5-model-settings-页面新增) | ModelSettingsView | P2 | ✅ 已完成 |
+| 6 | [国际化 (i18n)](#任务-6-国际化-i18n) | 全局 | P0 | ✅ 已完成 |
 | 7 | [README 使用文档](#任务-7-readme-使用文档) | - | P0 | ⏳ 待开发 |
 | 8 | [v1.0.0 发布](#任务-8-v100-发布) | - | P0 | ⏳ 待执行 |
+| 9 | [Android APK 适配](#任务-9-android-apk-适配) | - | P1 | ⏳ 待开发 |
 
 ---
 
@@ -71,35 +72,35 @@
 
 ---
 
-## 任务 4: Settings 页面完善
+## 任务 4: Settings 页面完善 ✅
 
 **文件**: `web/src/views/SettingsView.vue`
 
 ### 问题清单
-- [ ] Security 标签页面内容设计
-- [ ] Advanced 标签页面内容设计
-- [ ] UI 细节调整（间距、对齐等）
-- [ ] 配置保存功能验证
+- [x] Security 标签页面内容设计
+- [x] Advanced 标签页面内容设计
+- [x] UI 细节调整（间距、对齐等）
+- [x] 配置保存功能验证
 
 ### 参考截图
 ![Settings 当前状态](../../image/settings_current.png)
 
 ---
 
-## 任务 5: Model Settings 页面（新增）
+## 任务 5: Model Settings 页面（新增）✅
 
 **新增文件**: `web/src/views/ModelSettingsView.vue`
 
 ### 功能需求
-- [ ] 新增路由 `/model-settings`
-- [ ] 侧边栏添加导航项
-- [ ] 模型参数配置：
+- [x] 新增路由 `/model-settings`
+- [x] 侧边栏添加导航项
+- [x] 模型参数配置：
   - temperature (温度)
   - max_tokens (最大输出长度)
   - top_p
   - top_k
-- [ ] 参数保存到 localStorage 或后端
-- [ ] Chat 界面使用这些默认参数
+- [x] 参数保存到 localStorage 或后端
+- [x] Chat 界面使用这些默认参数
 
 ### 设计说明
 此页面用于设置 MuxueTools **自带 Chat 界面**的默认模型参数。
@@ -113,14 +114,15 @@
 
 ### 功能需求
 - [ ] 安装 vue-i18n
-- [ ] 创建语言文件 (`locales/zh-CN.json`, `locales/en-US.json`)
+- [ ] 创建语言文件（支持中英日三语言）
 - [ ] 侧边栏添加语言切换按钮
 - [ ] 所有页面文本国际化
 - [ ] 语言偏好 localStorage 持久化
 
 ### 新增文件
-- `web/src/locales/zh-CN.json`
-- `web/src/locales/en-US.json`
+- `web/src/locales/zh-CN.json` (简体中文)
+- `web/src/locales/en-US.json` (英语)
+- `web/src/locales/ja-JP.json` (日语)
 - `web/src/i18n.ts`
 
 ---
@@ -151,6 +153,25 @@
 
 ---
 
+## 任务 9: Android APK 适配
+
+**涉及文件**: 新增 Android 项目
+
+### 功能需求
+- [ ] Go: 适配 Android 文件系统路径 (Config/DB)
+- [ ] Go: 封装 `StartServer(bindAddr string)` 供 Java/Kotlin 调用
+- [ ] Android: 实现前台服务 (Foreground Service) 保持服务运行
+- [ ] Android: 集成 WebView 加载 `http://localhost:{port}`
+- [ ] Android 12+: 适配显示
+- [ ] 编译 x86/arm64 架构库
+- [ ] 生成 release 签名 APK
+- [ ] 真机测试 (Android 12+)
+
+### 技术方案
+使用 `gomobile` 将 Go 后端编译为 Android 库 (`.aar`)，在 Android Studio 中构建原生外壳。
+
+---
+
 ## 📅 进度记录
 
 | 日期 | 完成内容 |
@@ -159,7 +180,9 @@
 | 2026-01-18 | 完成任务 1: API Keys 页面优化 |
 | 2026-01-18 | 完成任务 2: Chat 界面改进 |
 | 2026-01-18 | 完成任务 3: Statistics 页面实现 |
+| 2026-01-20 | 完成任务 4: Settings 页面完善 |
+| 2026-01-20 | 完成任务 5: Model Settings 页面 |
 
 ---
 
-*最后更新: 2026-01-18*
+*最后更新: 2026-01-20*

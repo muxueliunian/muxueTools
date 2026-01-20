@@ -231,13 +231,16 @@ type ModelSettingsConfig struct {
 	TopK            *int     `mapstructure:"top_k" yaml:"top_k" json:"top_k,omitempty"`
 	ThinkingLevel   *string  `mapstructure:"thinking_level" yaml:"thinking_level" json:"thinking_level,omitempty"`
 	MediaResolution *string  `mapstructure:"media_resolution" yaml:"media_resolution" json:"media_resolution,omitempty"`
+	StreamOutput    *bool    `mapstructure:"stream_output" yaml:"stream_output" json:"stream_output,omitempty"` // Default: true
 }
 
 // DefaultModelSettingsConfig returns the default model settings configuration.
 func DefaultModelSettingsConfig() ModelSettingsConfig {
+	defaultStreamOutput := true
 	return ModelSettingsConfig{
 		SystemPrompt: "",
-		// nil means use Gemini's defaults
+		StreamOutput: &defaultStreamOutput,
+		// nil means use Gemini's defaults for other fields
 	}
 }
 
