@@ -58,6 +58,9 @@ func main() {
 		"mode":    "desktop",
 	}).Info("MuxueTools Desktop starting")
 
+	// Set application version for update checks
+	config.SetVersion(Version)
+
 	// Load configuration
 	var err error
 	if *configPath != "" {

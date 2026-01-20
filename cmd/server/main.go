@@ -53,6 +53,9 @@ func main() {
 	// Print banner
 	printBanner(logger)
 
+	// Set application version for update checks
+	config.SetVersion(Version)
+
 	// Load configuration
 	var err error
 	if *configPath != "" {
