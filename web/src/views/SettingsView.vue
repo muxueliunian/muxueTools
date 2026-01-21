@@ -89,6 +89,9 @@ const updateSourceOptions = computed(() => [
 // 更新源选择
 const updateSource = ref<'mxln' | 'github'>('mxln')
 
+// Server port configuration
+const serverPort = ref<number>(8080)
+
 // Masked proxy key for display
 const maskedProxyKey = computed(() => {
     if (showProxyKey.value) return proxyKey.value
@@ -124,6 +127,12 @@ async function loadConfig() {
                     media_resolution: res.data.model_settings.media_resolution ?? null,
                     stream_output: res.data.model_settings.stream_output ?? true
                 }
+            }
+            // Sync server port (stored_port is the user configured value)
+            if (res.data.server?.stored_port) {
+                serverPort.value = res.data.server.stored_port
+            } else if (res.data.server?.port) {
+                serverPort.value = res.data.server.port
             }
         }
     } catch (e: any) {
@@ -185,9 +194,18 @@ async function handleSave() {
             stream_output: modelSettings.value.stream_output
         }
         
+        // Server configuration (requires restart)
+        configToSave.server = {
+            port: serverPort.value
+        }
+        
         const res = await updateConfig(configToSave as Partial<ConfigInfo>)
         if (res.success) {
-            message.success('Configuration saved successfully')
+            message.success(t('settings.configSavedSuccess'))
+            // Show restart hint if server port was included in save
+            if (serverPort.value !== config.value.server.port) {
+                message.warning(t('settings.serverPortDescription'), { duration: 5000 })
+            }
         } else {
             message.error('Failed to save configuration')
         }
@@ -445,6 +463,22 @@ onMounted(() => {
                                     </div>
                                     <template #feedback>
                                         <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.proxyKeyDescription') }}</span>
+                                    </template>
+                                </n-form-item>
+
+                                <n-divider class="!my-4 !bg-claude-border dark:!bg-[#2A2A2E]" />
+
+                                <!-- Server Port Configuration -->
+                                <n-form-item :label="$t('settings.serverPort')">
+                                <n-input-number 
+                                        v-model:value="serverPort" 
+                                        :min="1024" 
+                                        :max="65535"
+                                        placeholder="8080"
+                                        class="w-48"
+                                    />
+                                    <template #feedback>
+                                        <span class="text-xs text-claude-secondaryText dark:text-gray-500">{{ $t('settings.serverPortDescription') }}</span>
                                     </template>
                                 </n-form-item>
                             </n-form>

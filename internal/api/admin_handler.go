@@ -705,6 +705,16 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 		requestTimeout = 120 // default
 	}
 
+	// Get stored port from storage (for user configuration, requires restart)
+	storedPort := cfg.Server.Port
+	if h.storage != nil {
+		if storedPortStr, _ := h.storage.GetConfig("server.port"); storedPortStr != "" {
+			if parsed, err := strconv.Atoi(storedPortStr); err == nil && parsed > 0 {
+				storedPort = parsed
+			}
+		}
+	}
+
 	// Get pool config from storage (override config.yaml values)
 	poolStrategy := string(cfg.Pool.Strategy)
 	poolCooldown := cfg.Pool.CooldownSeconds
@@ -778,8 +788,9 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 	// Return sanitized config (without sensitive data)
 	sanitized := gin.H{
 		"server": gin.H{
-			"port": cfg.Server.Port,
-			"host": cfg.Server.Host,
+			"port":        cfg.Server.Port,
+			"stored_port": storedPort,
+			"host":        cfg.Server.Host,
 		},
 		"pool": gin.H{
 			"strategy":         poolStrategy,
@@ -810,12 +821,18 @@ func (h *AdminHandler) GetConfig(c *gin.Context) {
 
 // UpdateConfigRequest represents the request to update configuration.
 type UpdateConfigRequest struct {
+	Server        *ServerConfigUpdate        `json:"server,omitempty"`
 	Pool          *PoolConfigUpdate          `json:"pool,omitempty"`
 	Logging       *LoggingConfigUpdate       `json:"logging,omitempty"`
 	Update        *UpdateConfigUpdate        `json:"update,omitempty"`
 	Security      *SecurityConfigUpdate      `json:"security,omitempty"`
 	Advanced      *AdvancedConfigUpdate      `json:"advanced,omitempty"`
 	ModelSettings *ModelSettingsConfigUpdate `json:"model_settings,omitempty"`
+}
+
+// ServerConfigUpdate represents server configuration updates.
+type ServerConfigUpdate struct {
+	Port *int `json:"port,omitempty"`
 }
 
 // PoolConfigUpdate represents pool configuration updates.
@@ -868,6 +885,20 @@ func (h *AdminHandler) UpdateConfig(c *gin.Context) {
 	}
 
 	updated := make(map[string]interface{})
+
+	// Process server configuration updates (requires restart)
+	if req.Server != nil && req.Server.Port != nil {
+		port := *req.Server.Port
+		if port < 1024 || port > 65535 {
+			RespondBadRequest(c, "Port must be between 1024 and 65535")
+			return
+		}
+
+		if h.storage != nil {
+			_ = h.storage.SetConfig("server.port", strconv.Itoa(port))
+		}
+		updated["server.port"] = port
+	}
 
 	// Process pool configuration updates
 	if req.Pool != nil {

@@ -230,6 +230,8 @@
         "sec": "秒",
         "streamOutput": "流式输出",
         "streamOutputDescription": "实时逐字显示响应内容，关闭则等待完整响应后一次性显示",
+        "serverPort": "服务端口",
+        "serverPortDescription": "修改后需重启应用生效",
         "topPDescription": "控制候选词的累积概率阈值",
         "topKDescription": "限制每步考虑的候选词数量",
         "maxOutputTokensDescription": "限制模型生成的最大 Token 数量",

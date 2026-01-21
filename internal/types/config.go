@@ -264,9 +264,15 @@ type ConfigData struct {
 
 // UpdateConfigRequest represents the request for PUT /api/config.
 type UpdateConfigRequest struct {
+	Server        *ServerConfigUpdate  `json:"server,omitempty"`
 	Pool          *PoolConfigUpdate    `json:"pool,omitempty"`
 	Logging       *LoggingConfigUpdate `json:"logging,omitempty"`
 	ModelSettings *ModelSettingsConfig `json:"model_settings,omitempty"`
+}
+
+// ServerConfigUpdate contains partial server configuration updates.
+type ServerConfigUpdate struct {
+	Port *int `json:"port,omitempty"`
 }
 
 // PoolConfigUpdate contains partial pool configuration updates.

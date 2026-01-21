@@ -15,6 +15,7 @@ export interface ModelSettingsConfig {
 export interface ConfigInfo {
     server: {
         port: number;
+        stored_port?: number;
         host: string;
     };
     pool: {

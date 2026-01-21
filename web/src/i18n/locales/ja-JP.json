@@ -230,6 +230,8 @@
         "sec": "秒",
         "streamOutput": "ストリーム出力",
         "streamOutputDescription": "リアルタイムで1文字ずつ応答を表示します。無効にすると完全な応答を一度に表示します。",
+        "serverPort": "サーバーポート",
+        "serverPortDescription": "変更後は再起動が必要です",
         "topPDescription": "候補トークンの累積確率閾値",
         "topKDescription": "考慮する候補トークンの数を制限",
         "maxOutputTokensDescription": "モデルが生成できる最大トークン数",

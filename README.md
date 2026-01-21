@@ -1,82 +1,337 @@
-# MuxueTools (muxueTools)
+# MuxueTools
 
-MuxueTools 是一�?OpenAI 兼容�?Gemini API 代理，支持多 Key 轮询、会话管理和内置聊天界面�?
+<p align="center">
+  <img src="web/public/icon.png" alt="MuxueTools Logo" width="128" height="128">
+</p>
 
-## 快速开�?
+<p align="center">
+  <strong>OpenAI Compatible Gemini API Proxy</strong>
+</p>
 
-下载最新版本：[Releases](https://github.com/muxueliunian/muxueTools/releases)
+<p align="center">
+  <a href="https://github.com/muxueliunian/muxueTools/releases">
+    <img src="https://img.shields.io/github/v/release/muxueliunian/muxueTools?style=flat-square" alt="Release">
+  </a>
+  <a href="https://github.com/muxueliunian/muxueTools/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License">
+  </a>
+</p>
 
-## CI/CD 自动化部�?
+---
 
-本项目使�?GitHub Actions 实现自动化构建和发布�?
+## Features
 
-### 触发条件
+- **OpenAI Compatible API** - Seamless integration with existing OpenAI applications
+- **Multi-Key Rotation** - Smart load balancing and automatic failover
+- **Built-in Chat UI** - Beautiful Claude-style interface
+- **Statistics Dashboard** - Real-time API usage monitoring
+- **Multi-language Support** - Chinese, English, Japanese
+- **Stream/Non-stream Output** - Configurable response mode
+- **Session Persistence** - Auto-save chat history
+- **Auto Update Detection** - Dual source update (mxln server + GitHub)
 
-当推送以 `v` 开头的 tag 时自动触发：
+---
+
+## Quick Start
+
+### Download
+
+Get the latest version from [Releases](https://github.com/muxueliunian/muxueTools/releases)
+
+### Run
+
+**Windows:**
+```bash
+.\muxueTools.exe
+```
+
+**Linux/macOS:**
+```bash
+chmod +x muxueTools
+./muxueTools
+```
+
+### Access
+
+Open browser: `http://localhost:8080`
+
+---
+
+## API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/chat/completions` | OpenAI compatible chat API |
+| `GET /v1/models` | List available models |
+| `GET /health` | Health check |
+| `GET /api/keys` | Manage API Keys |
+| `GET /api/config` | Configuration management |
+
+### Quick Test
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="sk-mxln-proxy-local"  # No key needed for local proxy
+)
+
+response = client.chat.completions.create(
+    model="gemini-2.0-flash",
+    messages=[{"role": "user", "content": "Hello!"}],
+    stream=True
+)
+
+for chunk in response:
+    print(chunk.choices[0].delta.content, end="")
+```
+
+---
+
+## Configuration
+
+Config file: `config.yaml` in the program directory.
+
+```yaml
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+pool:
+  strategy: "round_robin"  # round_robin, random, least_used, weighted
+  cooldown_seconds: 60
+  max_retries: 3
+
+logging:
+  level: "info"  # debug, info, warn, error
+
+update:
+  enabled: true
+  source: "mxln"  # mxln or github
+
+model_settings:
+  stream_output: true  # Enable streaming output
+  temperature: 1.0
+```
+
+### Desktop Version: Fixed Port
+
+By default, the Desktop version uses port **8080**. To change:
+
+1. **Via Settings UI**: Go to **Settings → Security → Server Port**, modify and save, then restart the app
+2. **Via config.yaml**: Set `server.port` to your desired port (e.g., `8888`)
+
+> **Note**: If the configured port is in use, the app will automatically fall back to a random available port.
+
+Example for Cursor/third-party integration:
+- **API Key**: Your proxy key from Dashboard  
+- **Base URL**: `http://127.0.0.1:8080/v1`
+
+---
+
+## Development
+
+### Requirements
+
+- Go 1.22+
+- Node.js 18+
+- npm or pnpm
+
+### Local Development
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+# 1. Clone repository
+git clone https://github.com/muxueliunian/muxueTools.git
+cd muxueTools
+
+# 2. Install frontend dependencies
+cd web
+npm install
+
+# 3. Start frontend dev server
+npm run dev
+
+# 4. Start backend (new terminal)
+cd ..
+go run ./cmd/server
 ```
 
-### 自动化流�?
-
-```
-推�?v* Tag �?构建 �?打包 �?FTP 上传 �?创建 Release
-```
-
-| 步骤 | 描述 |
-|------|------|
-| **构建前端** | `npm ci && npm run build` |
-| **构建后端** | Windows AMD64 可执行文�?|
-| **打包** | 生成 ZIP 压缩�?|
-| **生成 latest.json** | 自动生成版本信息文件 |
-| **FTP 上传** | 上传�?mxlnuma.space 服务�?|
-| **GitHub Release** | 创建 Release 并上传构建产�?|
-
-### 更新服务
-
-应用支持双源更新检查：
-
-| 更新�?| URL |
-|--------|-----|
-| mxln 服务�?| `https://mxlnuma.space/muxueTools/update/latest.json` |
-| GitHub Releases | GitHub API |
-
-### 所需 Secrets
-
-在仓�?Settings �?Secrets �?Actions 中配置：
-
-| Secret | 描述 |
-|--------|------|
-| `FTP_SERVER` | FTP 服务器地址 |
-| `FTP_USERNAME_TOOLS` | FTP 用户�?|
-| `FTP_PASSWORD_TOOLS` | FTP 密码 |
-
-### 发布新版�?
+### Build
 
 ```bash
-# 1. 提交代码
+# Frontend build
+cd web
+npm run build
+
+# Backend build (Windows)
+go build -ldflags="-s -w" -o build/muxueTools.exe ./cmd/server
+
+# Desktop build
+go build -ldflags="-s -w -H windowsgui" -o build/muxueTools-desktop.exe ./cmd/desktop
+```
+
+---
+
+## Release Process
+
+### Version Numbering
+
+Follow [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Incompatible API changes
+- **MINOR**: New features (backward compatible)
+- **PATCH**: Bug fixes (backward compatible)
+
+### Release Steps
+
+#### Step 1: Update Version Numbers
+
+Update the following files:
+
+| File | Location |
+|------|----------|
+| `web/package.json` | `"version": "x.x.x"` |
+| `cmd/server/main.go` | `Version = "x.x.x"` |
+| `cmd/desktop/main.go` | `Version = "x.x.x"` |
+
+#### Step 2: Update CHANGELOG
+
+Add new version changes to `CHANGELOG.md`.
+
+#### Step 3: Verify Build
+
+```bash
+# Frontend build
+cd web && npm run build
+
+# Backend build
+go build ./...
+
+# Test version
+go build -o test.exe ./cmd/server && .\test.exe -version
+```
+
+#### Step 4: Commit Changes
+
+```bash
 git add .
-git commit -m "Release v1.0.0"
+git commit -m "chore: bump version to vX.X.X"
 git push origin main
-
-# 2. 创建并推�?tag
-git tag v1.0.0
-git push origin v1.0.0
-
-# 3. 等待 Actions 完成，检�?Releases 页面
 ```
 
-## 功能特�?
+#### Step 5: Create Tag
 
-- �?OpenAI 兼容 API 代理
-- �?�?Key 轮询管理  
-- �?内置聊天界面
-- �?统计数据看板
-- �?配置持久�?
-- �?自动更新检�?
+```bash
+# Create annotated tag
+git tag -a vX.X.X -m "Release vX.X.X - Brief description"
 
-## 许可�?
+# Push tag
+git push origin vX.X.X
+```
 
-MIT License
+#### Step 6: Automatic Deployment
+
+After pushing the tag, GitHub Actions will automatically:
+1. Build frontend and backend
+2. Package into ZIP archive
+3. Generate `latest.json` version info
+4. Upload to FTP server
+5. Create GitHub Release
+
+#### Step 7: Verify Release
+
+- Check [Releases](https://github.com/muxueliunian/muxueTools/releases) page
+- Verify download links work
+- Test auto-update functionality
+
+---
+
+## CI/CD Configuration
+
+### Automation Flow
+
+```
+Push v* Tag -> Build -> Package -> FTP Upload -> Create Release
+```
+
+### Required Secrets
+
+Configure in repo Settings -> Secrets -> Actions:
+
+| Secret | Description |
+|--------|-------------|
+| `FTP_SERVER` | FTP server address |
+| `FTP_USERNAME_TOOLS` | FTP username |
+| `FTP_PASSWORD_TOOLS` | FTP password |
+
+### Update Service
+
+The app supports dual-source update checking:
+
+| Source | URL |
+|--------|-----|
+| mxln Server | `https://mxlnuma.space/muxueTools/update/latest.json` |
+| GitHub | GitHub Releases API |
+
+---
+
+## Project Structure
+
+```
+muxueTools/
+├── cmd/
+│   ├── server/      # Server entry point
+│   └── desktop/     # Desktop app entry point
+├── internal/
+│   ├── api/         # HTTP handlers
+│   ├── config/      # Configuration management
+│   ├── gemini/      # Gemini client
+│   ├── keypool/     # Key pool management
+│   ├── storage/     # Data persistence
+│   └── types/       # Type definitions
+├── web/             # Vue3 frontend
+│   ├── src/
+│   │   ├── api/         # API client
+│   │   ├── components/  # UI components
+│   │   ├── views/       # Pages
+│   │   ├── stores/      # Pinia stores
+│   │   └── i18n/        # Internationalization
+│   └── dist/        # Build output
+├── docs/            # Documentation
+├── scripts/         # Build scripts
+└── .github/
+    └── workflows/   # CI/CD config
+```
+
+---
+
+## Documentation
+
+See [docs/](./docs/) directory:
+
+- [API Documentation](./docs/API.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Development Guide](./docs/DEVELOPMENT.md)
+- [Task Planning](./docs/README.md)
+
+---
+
+## License
+
+[MIT License](./LICENSE)
+
+---
+
+## Acknowledgments
+
+- [Google Gemini](https://ai.google.dev/) - AI model provider
+- [Vue.js](https://vuejs.org/) - Frontend framework
+- [Naive UI](https://www.naiveui.com/) - UI component library
+- [Gin](https://gin-gonic.com/) - Go web framework
+
+---
+
+<p align="center">
+  Made with love by <a href="https://github.com/muxueliunian">muxueliunian</a>
+</p>

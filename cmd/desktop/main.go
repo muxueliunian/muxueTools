@@ -21,7 +21,7 @@ import (
 
 // Version information, set at build time via ldflags.
 var (
-	Version   = "0.3.0"
+	Version   = "0.3.1"
 	BuildTime = "unknown"
 	GitCommit = "unknown"
 )
@@ -75,16 +75,17 @@ func main() {
 
 	cfg := config.Get()
 
-	// For desktop mode, use a random available port to avoid conflicts
-	// Override the configured port with 0 to let OS assign a free port
-	originalPort := cfg.Server.Port
-	cfg.Server.Port = 0
+	// Use configured port, fallback to 8080 if not set
+	targetPort := cfg.Server.Port
+	if targetPort == 0 {
+		targetPort = 8080
+	}
 
 	logger.WithFields(logrus.Fields{
-		"original_port": originalPort,
-		"keys":          len(cfg.Keys),
-		"strategy":      cfg.Pool.Strategy,
-	}).Info("Configuration loaded (using random port for desktop mode)")
+		"target_port": targetPort,
+		"keys":        len(cfg.Keys),
+		"strategy":    cfg.Pool.Strategy,
+	}).Info("Configuration loaded")
 
 	// Determine WebRoot path for static file serving (if not in dev mode)
 	var resolvedWebRoot string
@@ -132,13 +133,23 @@ func main() {
 		logger.Fatalf("Failed to create server: %v", err)
 	}
 
-	// Create a listener to get the actual port
-	listener, err := net.Listen("tcp", ":0")
+	// Try to listen on configured port, fallback to random if unavailable
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", targetPort))
 	if err != nil {
-		logger.Fatalf("Failed to create listener: %v", err)
+		logger.Warnf("Port %d unavailable, using random port: %v", targetPort, err)
+		listener, err = net.Listen("tcp", ":0")
+		if err != nil {
+			logger.Fatalf("Failed to create listener: %v", err)
+		}
 	}
 	actualPort := listener.Addr().(*net.TCPAddr).Port
-	serverAddr := fmt.Sprintf("http://localhost:%d", actualPort)
+
+	// Build server URL using 127.0.0.1 for better compatibility
+	displayHost := cfg.Server.Host
+	if displayHost == "0.0.0.0" || displayHost == "" {
+		displayHost = "127.0.0.1"
+	}
+	serverAddr := fmt.Sprintf("http://%s:%d", displayHost, actualPort)
 
 	// Update config with actual port so /api/config returns the real port
 	cfg.Server.Port = actualPort
