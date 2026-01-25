@@ -1,0 +1,17 @@
+Package: muxuetools
+Version: 0.3.1
+Section: net
+Priority: optional
+Architecture: amd64
+Depends: libgtk-3-0, libwebkit2gtk-4.1-0
+Maintainer: muxueliunian <muxueliunian@example.com>
+Description: Gemini to OpenAI API Proxy
+ MuxueTools is a reverse proxy that converts Google AI Studio (Gemini) API
+ to OpenAI-compatible format, enabling seamless integration with existing
+ OpenAI clients.
+ .
+ Features:
+  - API key pool management
+  - Request statistics and monitoring
+  - Desktop GUI with embedded WebView
+Homepage: https://github.com/muxueliunian/muxueTools

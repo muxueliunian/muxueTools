@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"muxueTools/internal/config"
 	"muxueTools/internal/gemini"
 	"muxueTools/internal/keypool"
 	"muxueTools/internal/storage"
@@ -73,15 +74,18 @@ func NewServer(cfg *types.Config, opts ...ServerOption) (*Server, error) {
 	// Configure logger
 	server.configureLogger()
 
-	// Initialize storage (if configured)
-	if cfg.Database.Path != "" {
-		st, err := storage.NewStorage(cfg.Database.Path)
-		if err != nil {
-			server.logger.WithError(err).Warn("Failed to initialize storage, running in memory-only mode")
-		} else {
-			server.storage = st
-			server.logger.WithField("path", cfg.Database.Path).Info("Storage initialized")
-		}
+	// Initialize storage using platform-specific path
+	// GetEffectiveDatabasePath handles:
+	// - Explicit config path (if set)
+	// - Portable mode (uses ./data/muxuetools.db)
+	// - Platform-specific path (default)
+	dbPath := config.GetEffectiveDatabasePath(cfg.Database.Path)
+	st, err := storage.NewStorage(dbPath)
+	if err != nil {
+		server.logger.WithError(err).Warn("Failed to initialize storage, running in memory-only mode")
+	} else {
+		server.storage = st
+		server.logger.WithField("path", dbPath).Info("Storage initialized")
 	}
 
 	// Initialize key pool

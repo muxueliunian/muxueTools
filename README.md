@@ -51,6 +51,19 @@ chmod +x muxueTools
 ./muxueTools
 ```
 
+**Ubuntu (via .deb package):**
+```bash
+# Install
+sudo dpkg -i muxuetools_*.deb
+sudo apt-get install -f  # Install dependencies if needed
+
+# Run
+muxuetools
+
+# Uninstall
+sudo dpkg -r muxuetools
+```
+
 ### Access
 
 Open browser: `http://localhost:8080`
@@ -159,6 +172,59 @@ go run ./cmd/server
 
 ### Build
 
+#### Using Build Scripts (Recommended)
+
+**Windows (PowerShell):**
+```powershell
+# Build all targets
+.\scripts\build.ps1 all
+
+# Build server only
+.\scripts\build.ps1 server
+
+# Build desktop only
+.\scripts\build.ps1 desktop
+
+# Build Windows installer (requires Inno Setup 6)
+.\scripts\build.ps1 installer
+
+# Clean build artifacts
+.\scripts\build.ps1 clean
+```
+
+**Linux/macOS (Bash):**
+```bash
+# First time: make script executable
+chmod +x scripts/build.sh
+
+# Build all targets
+./scripts/build.sh all
+
+# Build server only
+./scripts/build.sh server
+
+# Build desktop only (requires GTK3 + WebKit2GTK)
+./scripts/build.sh desktop
+
+# Clean build artifacts
+./scripts/build.sh clean
+```
+
+#### Linux Desktop Build Requirements
+
+Desktop build on Linux requires GTK3 and WebKit2GTK dependencies:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+
+# Fedora
+sudo dnf install gtk3-devel webkit2gtk4.1-devel
+```
+
+#### Manual Build
+
 ```bash
 # Frontend build
 cd web
@@ -167,8 +233,14 @@ npm run build
 # Backend build (Windows)
 go build -ldflags="-s -w" -o build/muxueTools.exe ./cmd/server
 
-# Desktop build
+# Backend build (Linux)
+CGO_ENABLED=0 go build -ldflags="-s -w" -o build/muxuetools-server ./cmd/server
+
+# Desktop build (Windows)
 go build -ldflags="-s -w -H windowsgui" -o build/muxueTools-desktop.exe ./cmd/desktop
+
+# Desktop build (Linux, requires GTK3/WebKit2GTK)
+CGO_ENABLED=1 go build -ldflags="-s -w" -o build/muxuetools-desktop ./cmd/desktop
 ```
 
 ---

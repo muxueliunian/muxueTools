@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+# 设置执行权限
+chmod 755 /opt/muxuetools/muxuetools
+
+# 更新桌面菜单缓存
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+echo ""
+echo "============================================"
+echo " MuxueTools 安装成功!"
+echo "============================================"
+echo ""
+echo " 启动命令: muxuetools"
+echo " 数据目录: ~/.local/share/muxuetools/"
+echo " 配置目录: ~/.config/muxuetools/"
+echo ""
+echo " 桌面用户也可从应用程序菜单启动"
+echo "============================================"

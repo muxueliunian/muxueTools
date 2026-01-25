@@ -164,9 +164,11 @@ type DatabaseConfig struct {
 }
 
 // DefaultDatabaseConfig returns the default database configuration.
+// Path is left empty to indicate that the platform-specific path should be used.
+// Use config.GetEffectiveDatabasePath(Path) to get the actual path.
 func DefaultDatabaseConfig() DatabaseConfig {
 	return DatabaseConfig{
-		Path: "data/MuxueTools.db",
+		Path: "", // Empty means use config.GetEffectiveDatabasePath()
 	}
 }
 

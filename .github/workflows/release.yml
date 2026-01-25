@@ -44,18 +44,34 @@ jobs:
           npm ci
           npm run build
       
-      - name: Build Windows AMD64
+      - name: Build Windows Desktop
         shell: cmd
         run: |
           set CGO_ENABLED=1
           set GOOS=windows
           set GOARCH=amd64
-          go build -ldflags="-X main.Version=${{ steps.version.outputs.VERSION }}" -o dist/muxueTools-windows-amd64.exe ./cmd/desktop
+          go build -ldflags="-X main.Version=${{ steps.version.outputs.VERSION }} -H windowsgui" -o bin/muxueTools.exe ./cmd/desktop
       
-      - name: Create ZIP packages
+      - name: Create ZIP package
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/muxueTools-windows-amd64.exe -DestinationPath dist/muxueTools-windows-amd64.zip
+          mkdir -p dist
+          Compress-Archive -Path bin/muxueTools.exe -DestinationPath dist/muxueTools-windows-amd64.zip
+      
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+      
+      - name: Download Chinese Language File
+        shell: pwsh
+        run: |
+          $langPath = "C:\Program Files (x86)\Inno Setup 6\Languages"
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl" -OutFile "$langPath\ChineseSimplified.isl"
+      
+      - name: Build Windows Installer
+        shell: pwsh
+        run: |
+          $env:VERSION = "${{ steps.version.outputs.VERSION }}"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DVersion=${{ steps.version.outputs.VERSION }} scripts\installer\windows\setup.iss
       
       - name: Generate latest.json
         shell: bash
@@ -70,7 +86,10 @@ jobs:
             "release_date": "$DATE",
             "changelog": "## $TAG\n\n请查看 GitHub Release 获取完整更新日志。",
             "downloads": {
-              "windows-amd64": "https://mxlnuma.space/muxueTools/releases/$TAG/muxueTools-windows-amd64.zip"
+              "windows-amd64": "https://mxlnuma.space/muxueTools/releases/$TAG/muxueTools-windows-amd64.zip",
+              "windows-amd64-installer": "https://github.com/muxueliunian/muxueTools/releases/download/$TAG/MuxueTools-Setup-$VERSION.exe",
+              "linux-amd64": "https://github.com/muxueliunian/muxueTools/releases/download/$TAG/muxueTools-linux-amd64.tar.gz",
+              "linux-amd64-deb": "https://github.com/muxueliunian/muxueTools/releases/download/$TAG/muxuetools_${VERSION}_amd64.deb"
             },
             "min_supported_version": "0.1.0",
             "is_critical": false,
@@ -97,9 +116,93 @@ jobs:
           exclude: |
             **/*.exe
       
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-packages
+          path: |
+            dist/*.zip
+            dist/*.exe
+
+  build-linux:
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Install GTK/WebKit dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      
+      - name: Build Frontend
+        run: |
+          cd web
+          npm ci
+          npm run build
+      
+      - name: Build Linux Desktop
+        run: |
+          chmod +x scripts/build.sh
+          VERSION=${{ steps.version.outputs.VERSION }} ./scripts/build.sh desktop
+      
+      - name: Build .deb Package
+        run: |
+          chmod +x scripts/installer/linux/build-deb.sh
+          cd scripts/installer/linux
+          ./build-deb.sh ${{ steps.version.outputs.VERSION }}
+      
+      - name: Create tarball
+        run: |
+          mkdir -p dist
+          tar -czvf dist/muxueTools-linux-amd64.tar.gz -C bin muxuetools-desktop
+      
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            dist/*.tar.gz
+            dist/*.deb
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+      
+      - name: List artifacts
+        run: ls -la dist/
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            dist/MuxueTools-Setup-*.exe
             dist/muxueTools-windows-amd64.zip
+            dist/muxueTools-linux-amd64.tar.gz
+            dist/muxuetools_*.deb
           generate_release_notes: true

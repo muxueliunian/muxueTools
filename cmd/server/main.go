@@ -56,6 +56,17 @@ func main() {
 	// Set application version for update checks
 	config.SetVersion(Version)
 
+	// Ensure system directories exist (platform-specific paths)
+	if err := config.EnsureDirectories(); err != nil {
+		logger.Warnf("Failed to create directories: %v", err)
+		// Continue anyway, the app might still work with current directory
+	}
+
+	// Check for legacy data and log migration hint if found
+	if oldPath := config.CheckLegacyData(); oldPath != "" {
+		config.LogMigrationHint(logger, oldPath)
+	}
+
 	// Load configuration
 	var err error
 	if *configPath != "" {

@@ -116,9 +116,13 @@ func (l *Loader) Load() (*types.Config, error) {
 	l.setupDefaults()
 	l.setupEnvBindings()
 
-	// Add default search paths
+	// Add default search paths (priority from high to low)
+	// 1. Current directory (portable mode)
+	// 2. ./configs (development mode)
+	// 3. User config directory (platform-specific)
 	l.v.AddConfigPath(".")
 	l.v.AddConfigPath("./configs")
+	l.v.AddConfigPath(GetConfigDir())
 
 	// Try to read config file (not an error if it doesn't exist)
 	if err := l.v.ReadInConfig(); err != nil {
@@ -136,7 +140,7 @@ func (l *Loader) Load() (*types.Config, error) {
 	}
 
 	// Apply default model mappings if not set
-	if cfg.Models == nil || len(cfg.Models) == 0 {
+	if len(cfg.Models) == 0 {
 		cfg.Models = types.DefaultModelMappings()
 	}
 

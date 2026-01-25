@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("server", "desktop", "desktop-x86", "all", "clean")]
+    [ValidateSet("server", "desktop", "desktop-x86", "all", "clean", "installer")]
     [string]$Target = "all"
 )
 
@@ -209,6 +209,85 @@ function Clean-Build {
     Write-Host "Clean complete" -ForegroundColor Green
 }
 
+function Build-Installer {
+    Write-Header "Building Windows Installer (Inno Setup)"
+    
+    # Check if Inno Setup is installed
+    $isccPath = $null
+    
+    # Try to find ISCC in PATH first
+    $isccCmd = Get-Command iscc -ErrorAction SilentlyContinue
+    if ($isccCmd) {
+        $isccPath = $isccCmd.Source
+    }
+    else {
+        # Try common installation paths
+        $commonPaths = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe",
+            "C:\Program Files (x86)\Inno Setup 5\ISCC.exe",
+            "C:\Program Files\Inno Setup 5\ISCC.exe"
+        )
+        foreach ($path in $commonPaths) {
+            if (Test-Path $path) {
+                $isccPath = $path
+                break
+            }
+        }
+    }
+    
+    if (-not $isccPath) {
+        Write-Host "Error: Inno Setup not found." -ForegroundColor Red
+        Write-Host "Please install Inno Setup from: https://jrsoftware.org/isdl.php" -ForegroundColor Yellow
+        return $false
+    }
+    
+    Write-Host "Found Inno Setup: $isccPath" -ForegroundColor Cyan
+    
+    # Verify required files exist
+    $setupScript = Join-Path $ProjectRoot "scripts\installer\windows\setup.iss"
+    $exePath = Join-Path $BinDir "muxueTools.exe"
+    $webDistPath = Join-Path $ProjectRoot "web\dist"
+    
+    if (-not (Test-Path $setupScript)) {
+        Write-Host "Error: setup.iss not found at $setupScript" -ForegroundColor Red
+        return $false
+    }
+    
+    if (-not (Test-Path $exePath)) {
+        Write-Host "Error: muxueTools.exe not found. Please build desktop first." -ForegroundColor Red
+        return $false
+    }
+    
+    if (-not (Test-Path $webDistPath)) {
+        Write-Host "Error: web/dist not found. Please build frontend first." -ForegroundColor Red
+        return $false
+    }
+    
+    # Ensure dist directory exists
+    $distDir = Join-Path $ProjectRoot "dist"
+    if (-not (Test-Path $distDir)) {
+        New-Item -ItemType Directory -Path $distDir | Out-Null
+    }
+    
+    # Build installer
+    Write-Host "Running Inno Setup compiler..." -ForegroundColor Cyan
+    
+    # Pass version as environment variable (Inno Setup reads via GetEnv)
+    $env:VERSION = $Version
+    
+    & $isccPath $setupScript
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Inno Setup compilation failed!" -ForegroundColor Red
+        return $false
+    }
+    
+    Write-Host "Installer built successfully!" -ForegroundColor Green
+    Write-Host "Output: dist\MuxueTools-Setup-$Version.exe" -ForegroundColor Cyan
+    return $true
+}
+
 # Main execution
 Write-Host "MuxueTools Build Script" -ForegroundColor Magenta
 Write-Host "Version: $Version | Commit: $GitCommit" -ForegroundColor DarkGray
@@ -243,6 +322,14 @@ switch ($Target) {
     }
     "clean" {
         Clean-Build
+    }
+    "installer" {
+        # Build frontend first, then desktop, then create installer
+        $frontendOk = Build-Frontend
+        if ($frontendOk) {
+            Build-Desktop -Arch "amd64"
+            Build-Installer
+        }
     }
 }
 
