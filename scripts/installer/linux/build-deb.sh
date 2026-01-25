@@ -65,7 +65,6 @@ fi
 cat > "$BUILD_DIR/usr/share/applications/muxuetools.desktop" << EOF
 [Desktop Entry]
 Name=MuxueTools
-Name[zh_CN]=沐雪工具
 Comment=Gemini to OpenAI API Proxy
 Comment[zh_CN]=Gemini 转 OpenAI API 代理
 Exec=/opt/muxuetools/muxuetools

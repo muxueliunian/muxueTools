@@ -146,6 +146,43 @@ build_desktop() {
     
     echo -e "${CYAN}Found WebKit: $webkit_version${NC}"
     
+    # Ubuntu 24.04+ uses webkit2gtk-4.1, but webview_go hardcodes webkit2gtk-4.0
+    # Create a pkg-config wrapper to redirect the request
+    if [ "$webkit_version" = "webkit2gtk-4.1" ]; then
+        echo -e "${YELLOW}Using webkit2gtk-4.1 (Ubuntu 24.04+)${NC}"
+        echo -e "${CYAN}Creating pkg-config wrapper to redirect webkit2gtk-4.0 -> webkit2gtk-4.1${NC}"
+        
+        # Create temporary directory for wrapper
+        local wrapper_dir=$(mktemp -d)
+        trap "rm -rf $wrapper_dir" EXIT
+        
+        # Create pkg-config wrapper script
+        cat > "$wrapper_dir/pkg-config" << 'WRAPPER_EOF'
+#!/bin/bash
+# Wrapper script to redirect webkit2gtk-4.0 requests to webkit2gtk-4.1
+
+# Replace webkit2gtk-4.0 with webkit2gtk-4.1 in arguments
+args=()
+for arg in "$@"; do
+    if [ "$arg" = "webkit2gtk-4.0" ]; then
+        args+=("webkit2gtk-4.1")
+    else
+        args+=("$arg")
+    fi
+done
+
+# Call the real pkg-config
+exec /usr/bin/pkg-config "${args[@]}"
+WRAPPER_EOF
+        
+        chmod +x "$wrapper_dir/pkg-config"
+        
+        # Put wrapper at the front of PATH
+        export PATH="$wrapper_dir:$PATH"
+        
+        echo -e "${GREEN}pkg-config wrapper created at: $wrapper_dir/pkg-config${NC}"
+    fi
+    
     export CGO_ENABLED=1
     export GOOS=linux
     export GOARCH=amd64
